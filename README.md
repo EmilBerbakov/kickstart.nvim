@@ -1,3 +1,12 @@
+# What I learned to do to get this to work on WSL:
+1. install brew
+2. brew install neovim
+3. git clone my kickstart fork
+4. make sure nvm is on the right node version for your project
+5. make sure the angular language service is on the right version for your project
+5. don't use :Mason install
+   - by this, I mean just use the servers table in init.lua and it will just work. trying to download it through :Mason results in Neovim panicking and not knowing where the bin commands are
+
 # kickstart.nvim
 
 ## Introduction
