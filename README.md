@@ -4,8 +4,9 @@
 3. git clone my kickstart fork
 4. make sure nvm is on the right node version for your project
 5. make sure the angular language service is on the right version for your project
-5. don't use :Mason install
+6. don't use :Mason install
    - by this, I mean just use the servers table in init.lua and it will just work. trying to download it through :Mason results in Neovim panicking and not knowing where the bin commands are
+7. Specifically for Angular: make sure node is on the right version, as well as the angular-language-server
 
 # kickstart.nvim
 
