@@ -205,16 +205,17 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
--- FIX: Attempting to add keybinds to swap between template, component, and scss code for Angular projects
--- Can't just do <C-key> because a lot of these have C commands I want
--- Tried to just do alt + key (<M-key>) but that doesn't seem to work for everything
--- ctrl+alt+shift+key (<C-M-S-key>) just seems to not work, outright
--- vim.keymap.set('n', '<C-M-h>', '%<.html <ENTER>', { silent = true })
--- vim.keymap.set('n', '<C-M-S-h>', ':vsplit %<.html <ENTER>', { silent = true })
--- vim.keymap.set('n', '<C-M-t>', '%<.ts <ENTER>', { silent = true })
--- vim.keymap.set('n', '<C-M-S-t>', ':vsplit %<.ts <ENTER>', { silent = true })
--- vim.keymap.set('n', '<C-M-s>', '%<.scss <ENTER>', { silent = true })
--- vim.keymap.set('n', '<C-M-S-s>', ':vsplit %<.scss <ENTER>', { silent = true })
+-- TODO: make these only apply when the Angular LSP loads in
+-- Angular-specific keybinds to quickly switch between file types
+-- Template code
+vim.keymap.set('n', '<M-h>', ':e %<.html <ENTER>', { silent = true })
+vim.keymap.set('n', '<C-M-h>', ':vsplit %<.html <ENTER>', { silent = true })
+-- Component code
+vim.keymap.set('n', '<M-t>', ':e %<.ts <ENTER>', { silent = true })
+vim.keymap.set('n', '<C-M-t>', ':vsplit %<.ts <ENTER>', { silent = true })
+-- CSS/SCSS code
+vim.keymap.set('n', '<M-c>', ':e %<.scss <ENTER>', { silent = true })
+vim.keymap.set('n', '<C-M-c>', ':vsplit %<.scss <ENTER>', { silent = true })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
