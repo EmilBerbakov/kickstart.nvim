@@ -205,6 +205,17 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
+-- FIX: Attempting to add keybinds to swap between template, component, and scss code for Angular projects
+-- Can't just do <C-key> because a lot of these have C commands I want
+-- Tried to just do alt + key (<M-key>) but that doesn't seem to work for everything
+-- ctrl+alt+shift+key (<C-M-S-key>) just seems to not work, outright
+-- vim.keymap.set('n', '<C-M-h>', '%<.html <ENTER>', { silent = true })
+-- vim.keymap.set('n', '<C-M-S-h>', ':vsplit %<.html <ENTER>', { silent = true })
+-- vim.keymap.set('n', '<C-M-t>', '%<.ts <ENTER>', { silent = true })
+-- vim.keymap.set('n', '<C-M-S-t>', ':vsplit %<.ts <ENTER>', { silent = true })
+-- vim.keymap.set('n', '<C-M-s>', '%<.scss <ENTER>', { silent = true })
+-- vim.keymap.set('n', '<C-M-S-s>', ':vsplit %<.scss <ENTER>', { silent = true })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -674,7 +685,7 @@ require('lazy').setup({
         -- clangd = {},
         angularls = {},
         csharp_ls = {},
-        djlint = {},
+        -- djlint = {},
         html = {},
         -- gopls = {},
         -- pyright = {},
@@ -880,25 +891,42 @@ require('lazy').setup({
     },
   },
 
-  { -- You can easily change to a different colorscheme.
-    -- Change the name of the colorscheme plugin below, and then
-    -- change the command in the config to whatever the name of that colorscheme is.
-    --
-    -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-    'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
+  --{ -- You can easily change to a different colorscheme.
+  -- Change the name of the colorscheme plugin below, and then
+  -- change the command in the config to whatever the name of that colorscheme is.
+  --
+  -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
+  --'folke/tokyonight.nvim',
+  --priority = 1000, -- Make sure to load this before all the other start plugins.
+  --config = function()
+  --  ---@diagnostic disable-next-line: missing-fields
+  --  require('tokyonight').setup {
+  --    transparent = true,
+  --    styles = {
+  --      comments = { italic = false }, -- Disable italics in comments
+  --      sidebars = 'transparent',
+  --      floats = 'transparent',
+  --    },
+  --  }
+
+  --  vim.cmd.colorscheme 'tokyonight'
+  --end,
+  --},
+  {
+    'catppuccin/nvim',
+    flavour = 'mocha',
+    name = 'catppuccin',
+    priority = 1000,
+    auto_integrations = true,
     config = function()
-      ---@diagnostic disable-next-line: missing-fields
-      require('tokyonight').setup {
-        styles = {
-          comments = { italic = false }, -- Disable italics in comments
+      require('catppuccin').setup {
+        transparent_background = true,
+        float = {
+          transparent = true,
+          solid = false,
         },
       }
-
-      -- Load the colorscheme here.
-      -- Like many other themes, this one has different styles, and you could load
-      -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'catppuccin'
     end,
   },
 
@@ -978,9 +1006,9 @@ require('lazy').setup({
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
   -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
   require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
