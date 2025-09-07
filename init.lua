@@ -441,6 +441,7 @@ require('lazy').setup({
           local map = function(keys, func, desc, mode, silent)
             mode = mode or 'n'
             silent = silent or false
+            desc = desc or 'No Description Set'
             vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc, silent = silent })
           end
 
@@ -449,8 +450,8 @@ require('lazy').setup({
           -- Once there, read the file locations for SCSS and HTML and add them to a table
           -- navigate to the file stored in the table based on key press instead of blindly going into something that might not exist
           if vim.tbl_filter(function(x)
-            return x.name == 'angular_ls'
-          end, vim.lsp.get_clients()) then
+            return x.name == 'angularls'
+          end, vim.lsp.get_clients())[1] ~= nil then
             -- Goto Template Code
             map('<M-h>', ':e %<.html <ENTER>', nil, nil, true)
             map('<C-M-h', ':vsplit %<.html <ENTER>', nil, nil, true)
