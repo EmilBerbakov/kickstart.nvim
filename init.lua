@@ -121,18 +121,6 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
--- TODO: make these only apply when the Angular LSP loads in
--- Angular-specific keybinds to quickly switch between file types
--- Template code
-vim.keymap.set('n', '<M-h>', ':e %<.html <ENTER>', { silent = true })
-vim.keymap.set('n', '<C-M-h>', ':vsplit %<.html <ENTER>', { silent = true })
--- Component code
-vim.keymap.set('n', '<M-t>', ':e %<.ts <ENTER>', { silent = true })
-vim.keymap.set('n', '<C-M-t>', ':vsplit %<.ts <ENTER>', { silent = true })
--- CSS/SCSS code
-vim.keymap.set('n', '<M-c>', ':e %<.scss <ENTER>', { silent = true })
-vim.keymap.set('n', '<C-M-c>', ':vsplit %<.scss <ENTER>', { silent = true })
-
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -184,21 +172,6 @@ require('lazy').setup({
   -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
   --
 
-  -- Alternatively, use `config = function() ... end` for full control over the configuration.
-  -- If you prefer to call `setup` explicitly, use:
-  --    {
-  --        'lewis6991/gitsigns.nvim',
-  --        config = function()
-  --            require('gitsigns').setup({
-  --                -- Your gitsigns configuration here
-  --            })
-  --        end,
-  --    }
-  --
-  -- Here is a more advanced example where we pass configuration
-  -- options to `gitsigns.nvim`.
-  --
-  -- See `:help gitsigns` to understand what the configuration keys do
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
     opts = {
@@ -465,9 +438,28 @@ require('lazy').setup({
           --
           -- In this case, we create a function that lets us more easily define mappings specific
           -- for LSP related items. It sets the mode, buffer and description for us each time.
-          local map = function(keys, func, desc, mode)
+          local map = function(keys, func, desc, mode, silent)
             mode = mode or 'n'
-            vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
+            silent = silent or false
+            vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc, silent = silent })
+          end
+
+          -- NOTE: Probably a better way to do this.
+          -- For example, when you are in a component, navigate to the ts file
+          -- Once there, read the file locations for SCSS and HTML and add them to a table
+          -- navigate to the file stored in the table based on key press instead of blindly going into something that might not exist
+          if vim.tbl_filter(function(x)
+            return x.name == 'angular_ls'
+          end, vim.lsp.get_clients()) then
+            -- Goto Template Code
+            map('<M-h>', ':e %<.html <ENTER>', nil, nil, true)
+            map('<C-M-h', ':vsplit %<.html <ENTER>', nil, nil, true)
+            -- Goto Component Code
+            map('<M-t>', ':e %<.ts <ENTER>', nil, nil, true)
+            map('<C-M-t>', ':vsplit %<.ts <ENTER>', nil, nil, true)
+            -- Goto SCSS
+            map('<M-c>', ':e %<.scss <ENTER>', nil, nil, true)
+            map('<C-M-c>', ':vsplit %<.scss <ENTER>', nil, nil, true)
           end
 
           -- Rename the variable under your cursor.
