@@ -456,14 +456,20 @@ require('lazy').setup({
             end, vim.lsp.get_clients())[1] ~= nil and string.find(vim.fn.expand '%:t', '.component.')
           then
             -- Goto Template Code
-            map('<M-h>', ':e %<.html <ENTER>', nil, nil, true)
-            map('<C-M-h', ':vsplit %<.html <ENTER>', nil, nil, true)
+            map('<M-h>', ':e %<.html <ENTER>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
+            map('<C-M-h>', ':vsplit %<.html <ENTER>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
+            map('gah', ':e %<.html <ENTER>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
+            map('gash', ':vsplit %<.html <ENTER>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
             -- Goto Component Code
-            map('<M-t>', ':e %<.ts <ENTER>', nil, nil, true)
-            map('<C-M-t>', ':vsplit %<.ts <ENTER>', nil, nil, true)
+            map('<M-t>', ':e %<.ts <ENTER>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
+            map('<C-M-t>', ':vsplit %<.ts <ENTER>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
+            map('gat', ':e %<.ts <ENTER>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
+            map('gast', ':vsplit %<.ts <ENTER>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
             -- Goto SCSS
-            map('<M-c>', ':e %<.scss <ENTER>', nil, nil, true)
-            map('<C-M-c>', ':vsplit %<.scss <ENTER>', nil, nil, true)
+            map('<M-c>', ':e %<.scss <ENTER>', '[G]oto [A]ngular S[C]SS', nil, true)
+            map('<C-M-c>', ':vsplit %<.scss <ENTER>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
+            map('gac', ':e %<.scss <ENTER>', '[G]oto [A]ngular S[C]SS', nil, true)
+            map('gasc', ':vsplit %<.scss <ENTER>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
           end
 
           -- Rename the variable under your cursor.
