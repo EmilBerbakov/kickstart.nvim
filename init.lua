@@ -250,6 +250,7 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>b', group = '[B]uffer Actions' },
       },
     },
   },
@@ -313,7 +314,7 @@ require('lazy').setup({
         defaults = {
           mappings = {
             i = {
-              ['<c-enter>'] = 'to_fuzzy_refine',
+              ['<C-enter>'] = 'to_fuzzy_refine',
               ['<C-f>'] = require('telescope.actions.layout').toggle_preview,
             },
           },
@@ -346,6 +347,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader>bc', ':%bd|e#|bd# <ENTER>', { desc = '[B]uffer [C]lear', silent = true })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -614,11 +616,11 @@ require('lazy').setup({
         angularls = {},
         csharp_ls = {},
         -- djlint = {},
-        html = {},
+        -- html = {},
         -- gopls = {},
         pyright = {},
         cssls = {},
-        css_variables = {},
+        -- css_variables = {},
         powershell_es = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
