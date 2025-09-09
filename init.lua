@@ -7,7 +7,9 @@ vim.g.maplocalleader = ' '
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 local f = io.open(string.format('%s\\Microsoft\\Windows\\Fonts\\SymbolsNerdFontMono-Regular.ttf', os.getenv 'LOCALAPPDATA'), 'r')
 vim.g.have_nerd_font = f ~= nil
-if vim.g.have_nerd_font == true then io.close(f) end
+if vim.g.have_nerd_font == true then
+  io.close(f)
+end
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
