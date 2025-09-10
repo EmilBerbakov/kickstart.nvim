@@ -314,7 +314,7 @@ require('lazy').setup({
         defaults = {
           mappings = {
             i = {
-              ['<C-enter>'] = 'to_fuzzy_refine',
+              ['<C-ENTER>'] = 'to_fuzzy_refine',
               ['<C-f>'] = require('telescope.actions.layout').toggle_preview,
             },
           },
@@ -629,7 +629,8 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        ts_ls = {},
+        -- ts_ls = {},
+        vtsls = {},
         --
 
         lua_ls = {
