@@ -5,10 +5,15 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-local f = io.open(string.format('%s\\Microsoft\\Windows\\Fonts\\SymbolsNerdFontMono-Regular.ttf', os.getenv 'LOCALAPPDATA'), 'r')
-vim.g.have_nerd_font = f ~= nil
-if vim.g.have_nerd_font == true then
-  io.close(f)
+-- this does not work the way I think it does. Wezterm's set_environment_variables does not seem to be able to set custom variables that other programs can see
+if vim.env.HAS_NERD_FONT == 1 then
+  vim.g.have_nerd_font = true
+else
+  local f = io.open(string.format('%s\\Microsoft\\Windows\\Fonts\\SymbolsNerdFontMono-Regular.ttf', os.getenv 'LOCALAPPDATA'), 'r')
+  vim.g.have_nerd_font = f ~= nil
+  if vim.g.have_nerd_font == true then
+    io.close(f)
+  end
 end
 
 -- [[ Setting options ]]
@@ -101,12 +106,6 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-
--- TIP: Disable arrow keys in normal mode
-vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
-vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
-vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
-vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
