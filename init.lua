@@ -116,7 +116,10 @@ vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left wind
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
 
+-- Quick save and close
+vim.keymap.set('n', '<C-M-q>', ':wq <enter>', { desc = 'Close and save buffer' })
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -810,7 +813,9 @@ require('lazy').setup({
       -- fuzzy = { implementation = 'lua' },
       fuzzy = { implementation = 'prefer_rust' },
       -- Shows a signature help window while you type arguments for a function
-      signature = { enabled = true },
+      -- NOTE: <C-k> while in insert mode is the default shortcut to toggle signature on and off
+      -- I want to start with it off because it just gets in the way more often than not
+      -- signature = { enabled = true },
     },
   },
 
