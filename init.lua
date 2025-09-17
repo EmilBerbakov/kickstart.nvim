@@ -6,6 +6,7 @@ vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 -- this does not work the way I think it does. Wezterm's set_environment_variables does not seem to be able to set custom variables that other programs can see
+-- NOTE: can just import nvim-web-devicons up top and always have have_nerd_font set to true
 if vim.env.HAS_NERD_FONT == 1 then
   vim.g.have_nerd_font = true
 else
@@ -302,7 +303,10 @@ require('lazy').setup({
       -- This opens a window that shows you all of the keymaps for the current
       -- Telescope picker. This is really useful to discover what Telescope can
       -- do as well as how to actually do it!
-
+      local harpoon = require 'harpoon'
+      local function h_add()
+        harpoon:list():add()
+      end
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
@@ -314,6 +318,8 @@ require('lazy').setup({
             i = {
               ['<C-ENTER>'] = 'to_fuzzy_refine',
               ['<C-f>'] = require('telescope.actions.layout').toggle_preview,
+              -- NOTE: Doesn't work.
+              -- ['<C-a>'] = h_add,
             },
           },
         },
@@ -335,25 +341,8 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
-      local harpoon = require 'harpoon'
-      local conf = require('telescope.config').values
-      local function toggle_telescope(harpoon_files)
-        local file_paths = {}
-        for _, item in ipairs(harpoon_files.items) do
-          table.insert(file_paths, item.value)
-        end
 
-        require('telescope.pickers')
-          .new({}, {
-            prompt_title = 'Harpoon',
-            finder = require('telescope.finders').new_table {
-              results = file_paths,
-            },
-            previewer = conf.file_previewer {},
-            sorter = conf.generic_sorter {},
-          })
-          :find()
-      end
+      --Search Actions
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
@@ -362,25 +351,6 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader>b<leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
-      vim.keymap.set('n', '<leader>bc', ':%bd|e#|bd# <ENTER>', { desc = '[C]lear other buffers', silent = true })
-      vim.keymap.set('n', '<leader>aa', function()
-        harpoon:list():add()
-      end, { desc = '[A]dd to Harpoon List' })
-      vim.keymap.set('n', '<leader>al', function()
-        toggle_telescope(harpoon:list())
-      end, { desc = 'Harpoon [L]ist' })
-
-      -- Slightly advanced example of overriding default behavior and theme
-      vim.keymap.set('n', '<leader>b/', function()
-        -- You can pass additional configuration to Telescope to change the theme, layout, etc.
-        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
-      end, { desc = '[/] Fuzzily search in current buffer' })
-
       -- It's also possible to pass additional configuration options.
       --  See `:help telescope.builtin.live_grep()` for information about particular keys
       vim.keymap.set('n', '<leader>s/', function()
@@ -394,6 +364,45 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
+      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
+
+      -- Buffer actions
+      vim.keymap.set('n', '<leader>b/', function()
+        -- You can pass additional configuration to Telescope to change the theme, layout, etc.
+        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+          winblend = 10,
+          previewer = false,
+        })
+      end, { desc = '[/] Fuzzily search in current buffer' })
+      vim.keymap.set('n', '<leader>b<leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader>bc', ':%bd|e#|bd# <ENTER>', { desc = '[C]lear other buffers', silent = true })
+
+      --NOTE: while Harpoon using telescope looks nice, it's hard to remove files from the list
+
+      --Harpoon Actions
+      -- local conf = require('telescope.config').values
+      -- local function toggle_telescope(harpoon_files)
+      --   local file_paths = {}
+      --   for _, item in ipairs(harpoon_files.items) do
+      --     table.insert(file_paths, item.value)
+      --   end
+
+      --   require('telescope.pickers')
+      --     .new({}, {
+      --       prompt_title = 'Harpoon',
+      --       finder = require('telescope.finders').new_table {
+      --         results = file_paths,
+      --       },
+      --       previewer = conf.file_previewer {},
+      --       sorter = conf.generic_sorter {},
+      --     })
+      --     :find()
+      -- end
+      vim.keymap.set('n', '<leader>aa', h_add, { desc = '[A]dd to Harpoon List' })
+      vim.keymap.set('n', '<leader>al', function()
+        -- toggle_telescope(harpoon:list())
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+      end, { desc = 'Harpoon [L]ist' })
     end,
   },
 
@@ -428,35 +437,6 @@ require('lazy').setup({
       'saghen/blink.cmp',
     },
     config = function()
-      -- Brief aside: **What is LSP?**
-      --
-      -- LSP is an initialism you've probably heard, but might not understand what it is.
-      --
-      -- LSP stands for Language Server Protocol. It's a protocol that helps editors
-      -- and language tooling communicate in a standardized fashion.
-      --
-      -- In general, you have a "server" which is some tool built to understand a particular
-      -- language (such as `gopls`, `lua_ls`, `rust_analyzer`, etc.). These Language Servers
-      -- (sometimes called LSP servers, but that's kind of like ATM Machine) are standalone
-      -- processes that communicate with some "client" - in this case, Neovim!
-      --
-      -- LSP provides Neovim with features like:
-      --  - Go to definition
-      --  - Find references
-      --  - Autocompletion
-      --  - Symbol Search
-      --  - and more!
-      --
-      -- Thus, Language Servers are external tools that must be installed separately from
-      -- Neovim. This is where `mason` and related plugins come into play.
-      --
-      -- If you're wondering about lsp vs treesitter, you can check out the wonderfully
-      -- and elegantly composed help section, `:help lsp-vs-treesitter`
-
-      --  This function gets run when an LSP attaches to a particular buffer.
-      --    That is to say, every time a new file is opened that is associated with
-      --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
-      --    function will be executed to configure the current buffer
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
