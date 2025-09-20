@@ -4,24 +4,23 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
--- Set to true if you have a Nerd Font installed and selected in the terminal
--- this does not work the way I think it does. Wezterm's set_environment_variables does not seem to be able to set custom variables that other programs can see
--- NOTE: can just import nvim-web-devicons up top and always have have_nerd_font set to true
-if vim.env.HAS_NERD_FONT == 1 then
-  vim.g.have_nerd_font = true
-else
-  local f = io.open(string.format('%s\\Microsoft\\Windows\\Fonts\\SymbolsNerdFontMono-Regular.ttf', os.getenv 'LOCALAPPDATA'), 'r')
-  vim.g.have_nerd_font = f ~= nil
-  if vim.g.have_nerd_font == true then
-    io.close(f)
+local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
+local function already_has_nerd_font()
+  local cmd
+  if is_windows then
+    cmd = {'powershell', '-Command', 'Get-ChildItem $env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts | Where-Object Name -Like *Nerd*' }
+  else
+    cmd = { 'fc-list', ':family', '|', 'grep', '-i', 'Nerd' }
   end
+  local handle = vim.fn.system(cmd)
+  return (vim.v.shell_error == 0 and vim.trim(handle) ~= '')
 end
+vim.g.have_nerd_font = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm' or already_has_nerd_font()
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
-
 -- Make line numbers default
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
@@ -748,7 +747,7 @@ require('lazy').setup({
           -- Build Step is needed for regex support in snippets.
           -- This step is not supported in many windows environments.
           -- Remove the below condition to re-enable on windows.
-          if vim.fn.has 'win32' == 1 or vim.fn.executable 'make' == 0 then
+          if is_windows or vim.fn.executable 'make' == 0 then
             return
           end
           return 'make install_jsregexp'
