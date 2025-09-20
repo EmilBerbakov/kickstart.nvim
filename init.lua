@@ -4,11 +4,12 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
+--Both Determine if I have a Nerd Font available as well as if I am on Windows or not
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
 local function already_has_nerd_font()
   local cmd
   if is_windows then
-    cmd = {'powershell', '-Command', 'Get-ChildItem $env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts | Where-Object Name -Like *Nerd*' }
+    cmd = { 'powershell', '-NoLogo', '-NoProfile', '-Command', 'Get-ChildItem $env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts | Where-Object Name -Like *Nerd*' }
   else
     cmd = { 'fc-list', ':family', '|', 'grep', '-i', 'Nerd' }
   end
@@ -16,6 +17,30 @@ local function already_has_nerd_font()
   return (vim.v.shell_error == 0 and vim.trim(handle) ~= '')
 end
 vim.g.have_nerd_font = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm' or already_has_nerd_font()
+
+-- Conditionally hide the cmdline
+-- TODO: work on this; it's not quite doing what I want
+
+vim.api.nvim_create_autocmd({ 'CmdlineEnter' }, {
+  callback = function()
+    vim.opt.cmdheight = 1
+  end,
+})
+
+local function set_cmdheight()
+  vim.opt.cmdheight = vim.fn.getcmdline() == '' and 0 or 1
+end
+
+vim.api.nvim_create_autocmd({ 'CmdlineLeave' }, {
+  callback = set_cmdheight,
+})
+vim.api.nvim_create_autocmd({ 'BufEnter' }, {
+  callback = set_cmdheight,
+})
+
+vim.keymap.set('n', '<leader>tc', function()
+  vim.opt.cmdheight = 1 - vim.opt.cmdheight._value
+end, { desc = 'Toggle [c]mdheight' })
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
