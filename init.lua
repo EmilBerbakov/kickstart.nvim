@@ -36,6 +36,7 @@ vim.api.nvim_create_autocmd({ 'BufEnter' }, {
   callback = set_cmdheight,
 })
 vim.keymap.set('n', '<leader>tc', function()
+  ---@diagnostic disable-next-line: undefined-field
   vim.opt.cmdheight = 1 - vim.opt.cmdheight._value
 end, { desc = 'Toggle [c]mdheight' })
 
@@ -847,8 +848,7 @@ require('lazy').setup({
       fuzzy = { implementation = 'prefer_rust' },
       -- Shows a signature help window while you type arguments for a function
       -- NOTE: <C-k> while in insert mode is the default shortcut to toggle signature on and off
-      -- I want to start with it off because it just gets in the way more often than not
-      -- signature = { enabled = true },
+      signature = { enabled = true },
     },
   },
 
@@ -878,7 +878,7 @@ require('lazy').setup({
       require('catppuccin').setup {
         transparent_background = true,
         float = {
-          transparent = true,
+          transparent = false,
           solid = false,
         },
       }
