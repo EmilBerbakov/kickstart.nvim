@@ -21,24 +21,20 @@ vim.g.have_nerd_font = string.lower(nerd_font_check) == 'wezterm' or already_has
 
 -- Conditionally hide the cmdline
 -- TODO: work on this; it's not quite doing what I want
-
+local function set_cmdheight()
+  vim.opt.cmdheight = vim.fn.getcmdline() == '' and 0 or 1
+end
 vim.api.nvim_create_autocmd({ 'CmdlineEnter' }, {
   callback = function()
     vim.opt.cmdheight = 1
   end,
 })
-
-local function set_cmdheight()
-  vim.opt.cmdheight = vim.fn.getcmdline() == '' and 0 or 1
-end
-
 vim.api.nvim_create_autocmd({ 'CmdlineLeave' }, {
   callback = set_cmdheight,
 })
 vim.api.nvim_create_autocmd({ 'BufEnter' }, {
   callback = set_cmdheight,
 })
-
 vim.keymap.set('n', '<leader>tc', function()
   vim.opt.cmdheight = 1 - vim.opt.cmdheight._value
 end, { desc = 'Toggle [c]mdheight' })
@@ -214,11 +210,11 @@ require('lazy').setup({
     opts = { -- set to setup table
     },
   },
-  {
-    'ThePrimeagen/harpoon',
-    branch = 'harpoon2',
-    dependencies = { 'nvim-lua/plenary.nvim' },
-  },
+  -- {
+  --   'ThePrimeagen/harpoon',
+  --   branch = 'harpoon2',
+  --   dependencies = { 'nvim-lua/plenary.nvim' },
+  -- },
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
   -- This is often very useful to both group configuration, as well as handle
@@ -337,10 +333,10 @@ require('lazy').setup({
       -- This opens a window that shows you all of the keymaps for the current
       -- Telescope picker. This is really useful to discover what Telescope can
       -- do as well as how to actually do it!
-      local harpoon = require 'harpoon'
-      local function h_add()
-        harpoon:list():add()
-      end
+      -- local harpoon = require 'harpoon'
+      -- local function h_add()
+      --   harpoon:list():add()
+      -- end
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
@@ -412,7 +408,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
 
       -- Buffer actions
-      vim.keymap.set('n', '<leader>b/', function()
+      vim.keymap.set('n', '<leader>/', function()
         -- You can pass additional configuration to Telescope to change the theme, layout, etc.
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
           winblend = 10,
@@ -443,11 +439,11 @@ require('lazy').setup({
       --     })
       --     :find()
       -- end
-      vim.keymap.set('n', '<leader>aa', h_add, { desc = '[A]dd to Harpoon List' })
-      vim.keymap.set('n', '<leader>al', function()
-        -- toggle_telescope(harpoon:list())
-        harpoon.ui:toggle_quick_menu(harpoon:list())
-      end, { desc = 'Harpoon [L]ist' })
+      --  vim.keymap.set('n', '<leader>aa', h_add, { desc = '[A]dd to Harpoon List' })
+      --  vim.keymap.set('n', '<leader>al', function()
+      --    -- toggle_telescope(harpoon:list())
+      --    harpoon.ui:toggle_quick_menu(harpoon:list())
+      --  end, { desc = 'Harpoon [L]ist' })
     end,
   },
 
