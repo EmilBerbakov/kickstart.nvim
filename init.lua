@@ -16,7 +16,8 @@ local function already_has_nerd_font()
   local handle = vim.fn.system(cmd)
   return (vim.v.shell_error == 0 and vim.trim(handle) ~= '')
 end
-vim.g.have_nerd_font = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm' or already_has_nerd_font()
+local nerd_font_check = vim.env.TERM_PROGRAM or ''
+vim.g.have_nerd_font = string.lower(nerd_font_check) == 'wezterm' or already_has_nerd_font()
 
 -- Conditionally hide the cmdline
 -- TODO: work on this; it's not quite doing what I want
@@ -804,11 +805,6 @@ require('lazy').setup({
         -- 'enter' for enter to accept
         -- 'none' for no mappings
         --
-        -- For an understanding of why the 'default' preset is recommended,
-        -- you will need to read `:help ins-completion`
-        --
-        -- No, but seriously. Please read `:help ins-completion`, it is really good!
-        --
         -- All presets have the following mappings:
         -- <tab>/<s-tab>: move to right/left of your snippet expansion
         -- <c-space>: Open menu or open docs if already open
@@ -865,25 +861,20 @@ require('lazy').setup({
   -- change the command in the config to whatever the name of that colorscheme is.
   --
   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-  --'folke/tokyonight.nvim',
-  --priority = 1000, -- Make sure to load this before all the other start plugins.
-  --config = function()
-  --  ---@diagnostic disable-next-line: missing-fields
-  --  require('tokyonight').setup {
-  --    transparent = true,
-  --    styles = {
-  --      comments = { italic = false }, -- Disable italics in comments
-  --      sidebars = 'transparent',
-  --      floats = 'transparent',
-  --    },
-  --  }
-
-  --  vim.cmd.colorscheme 'tokyonight'
-  --end,
-  --},
   {
+    -- This does not work the way I want
+    -- Tried to get Wezterm to set a custom env variable and then have the specific theme tilt off of the value
+    -- Turns out, when Wezterm sets an env variable, it does not set it for the current session you are in; env variables can only be set when the environment is initializing and can't be changed after initialization
+    -- maybe I can use set_wezterm_user_var() instead of setting an environment variable? NO
+    -- maybe have a function inside my profile.ps1 and then have <leader>t execute that function. The function would set a shell variable that hopefully I can get Neovim to read
+    -- This would involve also making a bash function if I ever want to do this in a bash shell
     'catppuccin/nvim',
-    flavour = 'mocha',
+    -- event = { 'FocusGained', 'VimEnter' },
+    flavour = function()
+      local theme = vim.env.OS_THEME or 'Light'
+      local value = theme == 'Dark' and 'mocha' or 'latte'
+      return value
+    end,
     name = 'catppuccin',
     priority = 1000,
     auto_integrations = true,
@@ -895,6 +886,7 @@ require('lazy').setup({
           solid = false,
         },
       }
+      vim.o.background = string.lower(vim.env.OS_THEME or 'dark')
       vim.cmd.colorscheme 'catppuccin'
     end,
   },
