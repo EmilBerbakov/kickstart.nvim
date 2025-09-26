@@ -3,6 +3,8 @@
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+-- vim.o.termguicolors = true
+-- vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 
 --Both Determine if I have a Nerd Font available as well as if I am on Windows or not
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
@@ -865,7 +867,6 @@ require('lazy').setup({
     -- maybe have a function inside my profile.ps1 and then have <leader>t execute that function. The function would set a shell variable that hopefully I can get Neovim to read
     -- This would involve also making a bash function if I ever want to do this in a bash shell
     'catppuccin/nvim',
-    -- event = { 'FocusGained', 'VimEnter' },
     flavour = function()
       local theme = vim.env.OS_THEME or 'Dark'
       local value = theme == 'Dark' and 'mocha' or 'latte'
