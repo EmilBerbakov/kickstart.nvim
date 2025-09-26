@@ -280,7 +280,7 @@ require('lazy').setup({
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
         { '<leader>b', group = '[B]uffer Actions' },
-        { '<leader>a', group = 'H[a]rpoon Actions' },
+        -- { '<leader>a', group = 'H[a]rpoon Actions' },
       },
     },
   },
@@ -867,7 +867,7 @@ require('lazy').setup({
     'catppuccin/nvim',
     -- event = { 'FocusGained', 'VimEnter' },
     flavour = function()
-      local theme = vim.env.OS_THEME or 'Light'
+      local theme = vim.env.OS_THEME or 'Dark'
       local value = theme == 'Dark' and 'mocha' or 'latte'
       return value
     end,
@@ -876,7 +876,7 @@ require('lazy').setup({
     auto_integrations = true,
     config = function()
       require('catppuccin').setup {
-        transparent_background = true,
+        transparent_background = false,
         float = {
           transparent = false,
           solid = false,
@@ -1000,6 +1000,9 @@ require('lazy').setup({
     },
   },
 })
+
+-- Kickstart has toggle set to /; might be better to use that
+-- vim.keymap.set('n', '<leader>tt', ':Neotree toggle <ENTER>', { desc = 'Toggle File [T]ree', silent = true })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
