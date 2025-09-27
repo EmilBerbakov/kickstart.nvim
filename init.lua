@@ -7,15 +7,15 @@ vim.g.maplocalleader = ' '
 -- vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 
 --Both Determine if I have a Nerd Font available as well as if I am on Windows or not
-local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
+local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
 local function already_has_nerd_font()
   local cmd
   if is_windows then
-    cmd = { 'powershell', '-NoLogo', '-NoProfile', '-Command', 'Get-ChildItem $env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts | Where-Object Name -Like *Nerd*' }
+    cmd = { 'pwsh.exe', '-NoLogo', '-NoProfile', '-Command', 'Get-ChildItem $env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts | Where-Object Name -Like *Nerd*' }
   else
     cmd = { 'fc-list', ':family', '|', 'grep', '-i', 'Nerd' }
   end
-  local handle = vim.fn.system(cmd)
+  local handle = vim.fn.system(cmd) 
   return (vim.v.shell_error == 0 and vim.trim(handle) ~= '')
 end
 local nerd_font_check = vim.env.TERM_PROGRAM or ''
