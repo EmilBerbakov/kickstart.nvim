@@ -15,11 +15,11 @@ local function already_has_nerd_font()
   else
     cmd = { 'fc-list', ':family', '|', 'grep', '-i', 'Nerd' }
   end
-  local handle = vim.fn.system(cmd) 
+  local handle = vim.fn.system(cmd)
   return (vim.v.shell_error == 0 and vim.trim(handle) ~= '')
 end
-local nerd_font_check = vim.env.TERM_PROGRAM or ''
-vim.g.have_nerd_font = string.lower(nerd_font_check) == 'wezterm' or already_has_nerd_font()
+local nerd_font_check = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm' or vim.env.VERIFIED_NERD_FONT == 'True'
+vim.g.have_nerd_font = nerd_font_check or already_has_nerd_font()
 
 -- Conditionally hide the cmdline
 -- TODO: work on this; it's not quite doing what I want
