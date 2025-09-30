@@ -685,7 +685,7 @@ require('lazy').setup({
           --lsp.ruby_lsp.setup {}
           --lsp.rubocop.setup {}
           ---@diagnostic disable-next-line: inject-field, undefined-field
-          rb.capabilities = vim.tbl_deep_extend('force', {}, capabilities, rb.capabilities or {})
+          (rb).capabilities = vim.tbl_deep_extend('force', {}, capabilities, (rb).capabilities or {})
           vim.lsp.enable(rb)
 
           local rbcop = 'rubocop'
