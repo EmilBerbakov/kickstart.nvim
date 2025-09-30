@@ -692,9 +692,9 @@ require('lazy').setup({
         callback = function()
           ---@diagnostic disable-next-line: inject-field
           conditional_servers.ruby_ls.capabilities = vim.tbl_deep_extend('force', {}, capabilities, conditional_servers.ruby_ls.capabilities or {})
-          vim.lsp.enable 'ruby-lsp';
+          vim.lsp.enable 'ruby-lsp'
           ---@diagnostic disable-next-line: inject-field, undefined-field
-          ('rubocop').capabilities = vim.tbl_deep_extend('force', {}, capabilities, (conditional_servers.rubocop.capabilities or {}))
+          conditional_servers.rubocop.capabilities = vim.tbl_deep_extend('force', {}, capabilities, (conditional_servers.rubocop.capabilities or {}))
           vim.lsp.enable 'rubocop'
         end,
       })
