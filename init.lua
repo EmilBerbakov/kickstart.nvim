@@ -678,39 +678,44 @@ require('lazy').setup({
         },
       }
 
+      local conditional_servers = {
+        ruby_ls = {},
+        rubocop = {},
+        omnisharp = {},
+        powershell_es = {},
+      }
+
+      --WARNING: This does not work the way I want it to, so I'm just going to add languages to the servers table for now and press through the errors that arise
+
       vim.api.nvim_create_autocmd('FileType', {
         pattern = { 'ruby', 'eruby' },
         callback = function()
-          --lsp.ruby_lsp.setup {}
-          --lsp.rubocop.setup {}
-          ---@diagnostic disable-next-line: inject-field, undefined-field
-          --          ('ruby-lsp').capabilities = vim.tbl_deep_extend('force', {}, capabilities, ('ruby-lsp').capabilities or {})
-          vim.lsp.setup 'ruby-lsp'
+          ---@diagnostic disable-next-line: inject-field
+          ('ruby-lsp').capabilities = vim.tbl_deep_extend('force', {}, capabilities, conditional_servers.ruby_ls.capabilities or {})
           vim.lsp.enable 'ruby-lsp';
-
           ---@diagnostic disable-next-line: inject-field, undefined-field
-          ('rubocop').capabilities = vim.tbl_deep_extend('force', {}, capabilities, (('rubocop').capabilities or {}))
+          ('rubocop').capabilities = vim.tbl_deep_extend('force', {}, capabilities, (conditional_servers.rubocop.capabilities or {}))
           vim.lsp.enable 'rubocop'
         end,
       })
 
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'cs',
-        callback = function()
-          ---@diagnostic disable-next-line: inject-field, undefined-field
-          ('omnisharp').capabilities = vim.tbl_deep_extend('force', {}, capabilities, ('omnisharp').capabilities or {})
-          vim.lsp.enable 'omnisharp'
-        end,
-      })
+      --   vim.api.nvim_create_autocmd('FileType', {
+      --     pattern = 'cs',
+      --     callback = function()
+      --       ---@diagnostic disable-next-line: inject-field, undefined-field
+      --       ('omnisharp').capabilities = vim.tbl_deep_extend('force', {}, capabilities, ('omnisharp').capabilities or {})
+      --       vim.lsp.enable 'omnisharp'
+      --     end,
+      --   })
 
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'ps1',
-        callback = function()
-          ---@diagnostic disable-next-line: inject-field, undefined-field
-          ('powershell_es').capabilities = vim.tbl_deep_extend('force', {}, capabilities, ('powershell_es').capabilities or {})
-          vim.lsp.enable 'powershell_es'
-        end,
-      })
+      --   vim.api.nvim_create_autocmd('FileType', {
+      --     pattern = 'ps1',
+      --     callback = function()
+      --       ---@diagnostic disable-next-line: inject-field, undefined-field
+      --       ('powershell_es').capabilities = vim.tbl_deep_extend('force', {}, capabilities, ('powershell_es').capabilities or {})
+      --       vim.lsp.enable 'powershell_es'
+      --     end,
+      --   })
     end,
   },
 
