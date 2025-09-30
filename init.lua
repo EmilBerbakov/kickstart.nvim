@@ -352,6 +352,9 @@ require('lazy').setup({
           find_files = {
             previewer = false,
           },
+          git_files = {
+            previewer = false,
+          },
         },
         extensions = {
           ['ui-select'] = {
@@ -367,21 +370,24 @@ require('lazy').setup({
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
 
-      local function is_git()
-        vim.fn.system 'git rev-parse --is-inside-work-tree'
-        return vim.v.shell_error == 0
-      end
+      -- local function is_git()
+      --   vim.fn.system 'git rev-parse --is-inside-work-tree'
+      --   return vim.v.shell_error == 0
+      -- end
 
       --Search Actions
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', function()
-        if is_git() then
-          builtin.git_files()
-        else
-          builtin.find_files()
-        end
-      end, { desc = '[S]earch [F]iles' })
+
+      -- NOTE: turns out it's super annoying to only have access to git_files in a git project, since git_files does not let you search for untracked files
+      -- vim.keymap.set('n', '<leader>sf', function()
+      --   if is_git() then
+      --     builtin.git_files()
+      --   else
+      --     builtin.find_files()
+      --   end
+      -- end, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sf', builtin.find_files(), { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
