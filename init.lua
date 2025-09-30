@@ -683,6 +683,7 @@ require('lazy').setup({
         callback = function()
           --lsp.ruby_lsp.setup {}
           --lsp.rubocop.setup {}
+          ('ruby-lsp').capabilities = vim.tbl_deep_extend('force', {}, capabilities, ('ruby-lsp').capabilities or {})
           vim.lsp.enable 'ruby-lsp'
           vim.lsp.enable 'rubocop'
         end,
