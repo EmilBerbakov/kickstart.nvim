@@ -1007,8 +1007,5 @@ require('lazy').setup({
   },
 })
 
--- Kickstart has toggle set to /; might be better to use that
--- vim.keymap.set('n', '<leader>tt', ':Neotree toggle <ENTER>', { desc = 'Toggle File [T]ree', silent = true })
-
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
