@@ -681,26 +681,37 @@ require('lazy').setup({
       vim.api.nvim_create_autocmd('FileType', {
         pattern = { 'ruby', 'eruby' },
         callback = function()
+          local rb = 'ruby-lsp'
           --lsp.ruby_lsp.setup {}
           --lsp.rubocop.setup {}
-          ('ruby-lsp').capabilities = vim.tbl_deep_extend('force', {}, capabilities, ('ruby-lsp').capabilities or {})
-          vim.lsp.enable 'ruby-lsp'
-          vim.lsp.enable 'rubocop'
+          ---@diagnostic disable-next-line: inject-field, undefined-field
+          rb.capabilities = vim.tbl_deep_extend('force', {}, capabilities, rb.capabilities or {})
+          vim.lsp.enable(rb)
+
+          local rbcop = 'rubocop'
+          ---@diagnostic disable-next-line: inject-field, undefined-field
+          (rbcop).capabilities = vim.tbl_deep_extend('force', {}, capabilities, ((rbcop).capabilities or {}))
+          vim.lsp.enable(rbcop)
         end,
       })
 
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'cs',
         callback = function()
-          vim.lsp.enable 'omnisharp'
+          local ocs = 'omnisharp'
+          ---@diagnostic disable-next-line: inject-field
+          ocs.capabilities = vim.tbl_deep_extend('force', {}, capabilities, ocs.capabilities or {})
+          vim.lsp.enable(ocs)
         end,
       })
 
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'ps1',
         callback = function()
-          -- lsp.powershell_es.setup {}
-          vim.lsp.enable 'powershell_es'
+          local ps = 'powershell_es'
+          ---@diagnostic disable-next-line: inject-field
+          ps.capabilities = vim.tbl_deep_extend('force', {}, capabilities, ps.capabilities or {})
+          vim.lsp.enable(ps)
         end,
       })
     end,
