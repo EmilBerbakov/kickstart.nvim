@@ -213,11 +213,6 @@ require('lazy').setup({
     opts = { -- set to setup table
     },
   },
-  -- {
-  --   'ThePrimeagen/harpoon',
-  --   branch = 'harpoon2',
-  --   dependencies = { 'nvim-lua/plenary.nvim' },
-  -- },
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
   -- This is often very useful to both group configuration, as well as handle
@@ -282,7 +277,6 @@ require('lazy').setup({
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
         { '<leader>b', group = '[B]uffer Actions' },
-        -- { '<leader>a', group = 'H[a]rpoon Actions' },
       },
     },
   },
@@ -351,8 +345,6 @@ require('lazy').setup({
             i = {
               ['<C-ENTER>'] = 'to_fuzzy_refine',
               ['<C-f>'] = require('telescope.actions.layout').toggle_preview,
-              -- NOTE: Doesn't work.
-              -- ['<C-a>'] = h_add,
             },
           },
         },
@@ -420,33 +412,6 @@ require('lazy').setup({
       end, { desc = '[/] Fuzzily search in current buffer' })
       vim.keymap.set('n', '<leader>b<leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
       vim.keymap.set('n', '<leader>bc', ':%bd|e#|bd# <ENTER>', { desc = '[C]lear other buffers', silent = true })
-
-      --NOTE: while Harpoon using telescope looks nice, it's hard to remove files from the list
-
-      --Harpoon Actions
-      -- local conf = require('telescope.config').values
-      -- local function toggle_telescope(harpoon_files)
-      --   local file_paths = {}
-      --   for _, item in ipairs(harpoon_files.items) do
-      --     table.insert(file_paths, item.value)
-      --   end
-
-      --   require('telescope.pickers')
-      --     .new({}, {
-      --       prompt_title = 'Harpoon',
-      --       finder = require('telescope.finders').new_table {
-      --         results = file_paths,
-      --       },
-      --       previewer = conf.file_previewer {},
-      --       sorter = conf.generic_sorter {},
-      --     })
-      --     :find()
-      -- end
-      --  vim.keymap.set('n', '<leader>aa', h_add, { desc = '[A]dd to Harpoon List' })
-      --  vim.keymap.set('n', '<leader>al', function()
-      --    -- toggle_telescope(harpoon:list())
-      --    harpoon.ui:toggle_quick_menu(harpoon:list())
-      --  end, { desc = 'Harpoon [L]ist' })
     end,
   },
 
@@ -656,10 +621,7 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         angularls = {},
-        csharp_ls = {},
         cssls = {},
-        -- css_variables = {},
-        powershell_es = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -701,7 +663,9 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      require('mason-lspconfig').setup {
+      local lsp = require 'mason-lspconfig'
+
+      lsp.setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
         automatic_installation = false,
         handlers = {
@@ -715,6 +679,28 @@ require('lazy').setup({
           end,
         },
       }
+
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'ruby', 'eruby' },
+        callback = function()
+          lsp.ruby_lsp.setup {}
+          lsp.rubocop.setup {}
+        end,
+      })
+
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'cs',
+        callback = function()
+          lsp.omnisharp.setup {}
+        end,
+      })
+
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'ps1',
+        callback = function()
+          lsp.powershell_es.setup {}
+        end,
+      })
     end,
   },
 
