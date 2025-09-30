@@ -663,8 +663,6 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      local lsp = require 'lspconfig'
-
       require('mason-lspconfig').setup {
         ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
         automatic_installation = false,
@@ -683,22 +681,25 @@ require('lazy').setup({
       vim.api.nvim_create_autocmd('FileType', {
         pattern = { 'ruby', 'eruby' },
         callback = function()
-          lsp.ruby_lsp.setup {}
-          lsp.rubocop.setup {}
+          --lsp.ruby_lsp.setup {}
+          --lsp.rubocop.setup {}
+          vim.lsp.enable 'ruby-lsp'
+          vim.lsp.enable 'rubocop'
         end,
       })
 
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'cs',
         callback = function()
-          lsp.omnisharp.setup {}
+          vim.lsp.enable 'omnisharp'
         end,
       })
 
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'ps1',
         callback = function()
-          lsp.powershell_es.setup {}
+          -- lsp.powershell_es.setup {}
+          vim.lsp.enable 'powershell_es'
         end,
       })
     end,
