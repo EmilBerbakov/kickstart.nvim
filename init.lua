@@ -473,12 +473,8 @@ require('lazy').setup({
           -- For example, when you are in a component, navigate to the ts file
           -- Once there, read the file locations for SCSS and HTML and add them to a table
           -- navigate to the file stored in the table based on key press instead of blindly going into something that might not exist
-          -- For now, just check to see if you're looking at a component file. Only then can you attempt to jump around
-          if
-            vim.tbl_filter(function(x)
-              return x.name == 'angularls'
-            end, vim.lsp.get_clients())[1] ~= nil and string.find(vim.fn.expand '%:t', '.component.')
-          then
+          -- For now, just check to see if you're looking at a component file within an Angular project. Only then can you attempt to jump around
+          if vim.fs.root(0, 'angular.json') and string.find(vim.fn.expand '%t', '.component.') then
             -- Goto Template Code
             map('<M-h>', ':e %<.html <ENTER>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
             map('<C-M-h>', ':vsplit %<.html <ENTER>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
