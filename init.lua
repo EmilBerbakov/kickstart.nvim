@@ -20,7 +20,8 @@ local function already_has_nerd_font()
   local handle = vim.fn.system(cmd)
   return (vim.v.shell_error == 0 and vim.trim(handle) ~= '')
 end
-local nerd_font_check = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm' or vim.env.VERIFIED_NERD_FONT == 'True'
+local isWesterm = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm'
+local nerd_font_check = isWesterm or vim.env.VERIFIED_NERD_FONT == 'True'
 vim.g.have_nerd_font = nerd_font_check or already_has_nerd_font()
 
 -- Conditionally hide the cmdline
@@ -861,12 +862,6 @@ require('lazy').setup({
   --
   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
   {
-    -- This does not work the way I want
-    -- Tried to get Wezterm to set a custom env variable and then have the specific theme tilt off of the value
-    -- Turns out, when Wezterm sets an env variable, it does not set it for the current session you are in; env variables can only be set when the environment is initializing and can't be changed after initialization
-    -- maybe I can use set_wezterm_user_var() instead of setting an environment variable? NO
-    -- maybe have a function inside my profile.ps1 and then have <leader>t execute that function. The function would set a shell variable that hopefully I can get Neovim to read
-    -- This would involve also making a bash function if I ever want to do this in a bash shell
     'catppuccin/nvim',
     flavour = function()
       local theme = vim.env.OS_THEME or 'Dark'
@@ -889,8 +884,14 @@ require('lazy').setup({
     end,
   },
 
-  { 'folke/tokyonight.nvim', lazy = true },
-  { 'ellisonleao/gruvbox.nvim', lazy = true },
+  { 'folke/tokyonight.nvim', priority = 1000 },
+  {
+    'ellisonleao/gruvbox.nvim',
+    priority = 1000,
+    config = function()
+      vim.o.background = 'dark'
+    end,
+  },
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
@@ -1005,6 +1006,63 @@ require('lazy').setup({
     },
   },
 })
+local colorschemes = {
+  ['tokyonight-day'] = 'Tokyo Night Day',
+  ['tokyonight-storm'] = 'Tokyo Night Storm',
+  ['tokyonight'] = 'Tokyo Night',
+  ['catppuccin-frappe'] = 'Catppuccin Frappe',
+  ['catppuccin-latte'] = 'Catppuccin Latte',
+  ['catppuccin-macchiato'] = 'Catppuccin Macchiato',
+  ['catppuccin-mocha'] = 'Catppuccin Mocha',
+  ['gruvbox'] = 'GruvboxDark',
+}
+
+local function nvim_colorschemes(t)
+  local s = {}
+  for k, v in pairs(t) do
+    s[v] = k
+  end
+  return s
+end
+
+local nvim_colorschemes_table = nvim_colorschemes(colorschemes)
+
+vim.api.nvim_create_autocmd('ColorScheme', {
+  group = vim.api.nvim_create_augroup('wezterm_colorscheme', { clear = true }),
+  callback = function(args)
+    local colorscheme = colorschemes[args.match] or 'Catppuccin Mocha'
+    local colorfile = (os.getenv 'WEZTERM_CONFIG_DIR' or os.getenv 'HOME' or os.getenv 'USERPROFILE') .. '\\wezterm_colorscheme'
+    colorfile = colorfile:gsub('\\\\', '/')
+    assert(type(colorfile) == 'string')
+    local file = io.open(colorfile, 'w')
+    assert(file)
+    file:write(colorscheme)
+    file:close()
+    vim.notify('Setting WezTerm color to ' .. colorscheme)
+  end,
+})
+
+local function init_color()
+  local colorfile = (os.getenv 'WEZTERM_CONFIG_DIR' or os.getenv 'HOME' or os.getenv 'USERPROFILE') .. '\\wezterm_colorscheme'
+  colorfile = colorfile:gsub('\\\\', '/')
+  local file = io.open(colorfile, 'r')
+  if file then
+    local color = file:read '*a'
+    file:close()
+    vim.cmd.colorscheme(nvim_colorschemes_table[color])
+  else
+    vim.cmd.colorscheme 'catppuccin-mocha'
+  end
+  --NOTE: Doesn't do anything, yet. Can refresh manually and it catches up, though
+  if isWesterm then
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<ENTER><C-S-r>', true, false, true), 'n', false)
+  end
+end
+
+init_color()
+
+--ColorScheme shortcuts
+vim.keymap.set('n', '<leader>c', ':Telescope colorscheme <ENTER>', { desc = '[c]olorscheme' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
