@@ -897,6 +897,33 @@ require('lazy').setup({
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
+  {
+    'nvim-mini/mini.starter',
+    event = 'VimEnter',
+    opts = function()
+      local starter = require 'mini.starter'
+      local config = {
+        evaluate_single = true,
+        header = table.concat({
+          '/$$$$$$$$               /$$ /$$ /$$              /$$    /$$ /$$$$$$ /$$      /$$',
+          '| $$_____/              |__/| $$| $/             | $$   | $$|_  $$_/| $$$    /$$$',
+          '| $$       /$$$$$$/$$$$  /$$| $$|_//$$$$$$$      | $$   | $$  | $$  | $$$$  /$$$$',
+          '| $$$$$   | $$_  $$_  $$| $$| $$  /$$_____/      |  $$ / $$/  | $$  | $$ $$/$$ $$',
+          '| $$__/   | $$ \\ $$ \\ $$| $$| $$ |  $$$$$$        \\  $$ $$/   | $$  | $$  $$$| $$',
+          '| $$      | $$ | $$ | $$| $$| $$  \\____  $$        \\  $$$/    | $$  | $$\\  $ | $$',
+          '| $$$$$$$$| $$ | $$ | $$| $$| $$  /$$$$$$$/         \\  $/    /$$$$$$| $$ \\/  | $$',
+          '|________/|__/ |__/ |__/|__/|__/ |_______/           \\_/    |______/|__/     |__/',
+        }, '\n'),
+        content_hooks = {
+          starter.gen_hook.aligning('center', 'center'),
+          starter.gen_hook.adding_bullet('$ ', false),
+        },
+        silent = true,
+      }
+      return config
+    end,
+  },
+
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
     config = function()
@@ -1059,9 +1086,9 @@ local function init_color()
     vim.cmd.colorscheme 'catppuccin-mocha'
   end
   --NOTE: Doesn't do anything, yet. Can refresh manually and it catches up, though
-  if is_wezterm then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>[29;6u', true, true, true), 't', false)
-  end
+  --if is_wezterm then
+  --  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<ENTER><C-S-r>', true, false, true), 'n', false)
+  --end
 end
 
 init_color()
