@@ -1060,7 +1060,7 @@ local function init_color()
   end
   --NOTE: Doesn't do anything, yet. Can refresh manually and it catches up, though
   if is_wezterm then
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<ENTER><C-S-r>', true, false, true), 'n', false)
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>[29;6u', true, true, true), 't', false)
   end
 end
 
