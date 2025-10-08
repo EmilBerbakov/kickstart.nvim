@@ -10,6 +10,7 @@ vim.g.loaded_netrwPlugin = 1
 
 --Both Determine if I have a Nerd Font available as well as if I am on Windows or not
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
+local is_wezterm = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm'
 local function already_has_nerd_font()
   local cmd
   if is_windows then
@@ -20,8 +21,7 @@ local function already_has_nerd_font()
   local handle = vim.fn.system(cmd)
   return (vim.v.shell_error == 0 and vim.trim(handle) ~= '')
 end
-local isWesterm = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm'
-local nerd_font_check = isWesterm or vim.env.VERIFIED_NERD_FONT == 'True'
+local nerd_font_check = is_wezterm or vim.env.VERIFIED_NERD_FONT == 'True'
 vim.g.have_nerd_font = nerd_font_check or already_has_nerd_font()
 
 -- Conditionally hide the cmdline
@@ -892,6 +892,7 @@ require('lazy').setup({
       vim.o.background = 'dark'
     end,
   },
+  { 'rose-pine/neovim', priority = 1000 },
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
@@ -1010,11 +1011,15 @@ local colorschemes = {
   ['tokyonight-day'] = 'Tokyo Night Day',
   ['tokyonight-storm'] = 'Tokyo Night Storm',
   ['tokyonight'] = 'Tokyo Night',
+  ['tokyonight-moon'] = 'Tokyo Night Moon',
   ['catppuccin-frappe'] = 'Catppuccin Frappe',
   ['catppuccin-latte'] = 'Catppuccin Latte',
   ['catppuccin-macchiato'] = 'Catppuccin Macchiato',
   ['catppuccin-mocha'] = 'Catppuccin Mocha',
   ['gruvbox'] = 'GruvboxDark',
+  ['rose-pine'] = 'rose-pine',
+  ['rose-pine-moon'] = 'rose-pine-moon',
+  ['rose-pine-dawn'] = 'rose-pine-dawn',
 }
 
 local function nvim_colorschemes(t)
@@ -1054,7 +1059,7 @@ local function init_color()
     vim.cmd.colorscheme 'catppuccin-mocha'
   end
   --NOTE: Doesn't do anything, yet. Can refresh manually and it catches up, though
-  if isWesterm then
+  if is_wezterm then
     vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<ENTER><C-S-r>', true, false, true), 'n', false)
   end
 end
