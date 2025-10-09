@@ -869,7 +869,6 @@ require('lazy').setup({
     auto_integrations = true,
     config = function()
       require('catppuccin').setup {
-        transparent_background = false,
         float = {
           transparent = false,
           solid = false,
