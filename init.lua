@@ -5,8 +5,6 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
--- vim.o.termguicolors = true
--- vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
 
 --Both Determine if I have a Nerd Font available as well as if I am on Windows or not
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
@@ -49,10 +47,7 @@ end, { desc = 'Toggle [c]mdheight' })
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
--- Make line numbers default
 vim.o.number = true
--- You can also add relative line numbers, to help with jumping.
---  Experiment for yourself to see if you like it!
 vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
@@ -236,6 +231,7 @@ require('lazy').setup({
     opts = {
       -- delay between pressing a key and opening which-key (milliseconds)
       -- this setting is independent of vim.o.timeoutlen
+      preset = 'helix',
       delay = 0,
       icons = {
         -- set icon mappings to true if you have a Nerd Font
@@ -279,7 +275,7 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
-        { '<leader>b', group = '[B]uffer Actions' },
+        { '<leader>b', group = '[B]uffer' },
       },
     },
   },
@@ -905,14 +901,14 @@ require('lazy').setup({
       local config = {
         evaluate_single = true,
         header = table.concat({
-          '/$$$$$$$$               /$$ /$$ /$$              /$$    /$$ /$$$$$$ /$$      /$$',
-          '| $$_____/              |__/| $$| $/             | $$   | $$|_  $$_/| $$$    /$$$',
-          '| $$       /$$$$$$/$$$$  /$$| $$|_//$$$$$$$      | $$   | $$  | $$  | $$$$  /$$$$',
-          '| $$$$$   | $$_  $$_  $$| $$| $$  /$$_____/      |  $$ / $$/  | $$  | $$ $$/$$ $$',
-          '| $$__/   | $$ \\ $$ \\ $$| $$| $$ |  $$$$$$        \\  $$ $$/   | $$  | $$  $$$| $$',
-          '| $$      | $$ | $$ | $$| $$| $$  \\____  $$        \\  $$$/    | $$  | $$\\  $ | $$',
-          '| $$$$$$$$| $$ | $$ | $$| $$| $$  /$$$$$$$/         \\  $/    /$$$$$$| $$ \\/  | $$',
-          '|________/|__/ |__/ |__/|__/|__/ |_______/           \\_/    |______/|__/     |__/',
+          ' /$$$$$$$$               /$$ /$$     /$$   /$$ /$$    /$$ /$$$$$$ /$$      /$$',
+          '| $$_____/              |__/| $$    | $$$ | $$| $$   | $$|_  $$_/| $$$    /$$$',
+          '| $$       /$$$$$$/$$$$  /$$| $$    | $$$$| $$| $$   | $$  | $$  | $$$$  /$$$$',
+          '| $$$$$   | $$_  $$_  $$| $$| $$    | $$ $$ $$|  $$ / $$/  | $$  | $$ $$/$$ $$',
+          '| $$__/   | $$ \\ $$ \\ $$| $$| $$    | $$  $$$$ \\  $$ $$/   | $$  | $$  $$$| $$',
+          '| $$      | $$ | $$ | $$| $$| $$    | $$\\  $$$  \\  $$$/    | $$  | $$\\  $ | $$',
+          '| $$$$$$$$| $$ | $$ | $$| $$| $$ /$$| $$ \\  $$   \\  $/    /$$$$$$| $$ \\/  | $$',
+          '|________/|__/ |__/ |__/|__/|__/|__/|__/  \\__/    \\_/    |______/|__/     |__/',
         }, '\n'),
         content_hooks = {
           starter.gen_hook.aligning('center', 'center'),
