@@ -207,7 +207,7 @@ require('lazy').setup({
   },
   {
     'catgoose/nvim-colorizer.lua',
-    event = 'BufReadPre',
+    ft = { 'css', 'scss', 'sass' },
     opts = { -- set to setup table
     },
   },
