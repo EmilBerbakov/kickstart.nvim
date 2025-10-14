@@ -378,6 +378,47 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
 
+      local live_multigrep = function(opts)
+        opts = opts or {}
+        opts.cwd = opts.cwd or vim.uv.cwd()
+
+        local finder = require('telescope.finders').new_async_job {
+          command_generator = function(prompt)
+            if not prompt or string.gsub(prompt, '^%s*(.-)%s*$', '%1') == '' then
+              return nil
+            end
+            local pieces = vim.split(prompt, '  ')
+            local args = { 'rg' }
+            if pieces[1] then
+              table.insert(args, '-e')
+              table.insert(args, pieces[1])
+            end
+            if pieces[2] then
+              table.insert(args, '-g')
+              table.insert(args, pieces[2])
+            end
+            return vim
+              .iter({
+                args,
+                { '--color=never', '--no-heading', '--with-filename', '--line-number', '--column', '--smart-case' },
+              })
+              :flatten()
+              :totable()
+          end,
+          require('telescope.make_entry').gen_from_vimgrep(opts),
+          cwd = opts.cwd,
+        }
+        require('telescope.pickers')
+          .new(opts, {
+            debounce = 100,
+            prompt_title = 'Live Grep and Glob',
+            finder = finder,
+            previewer = require('telescope.config').values.grep_previewer(opts),
+            sorter = require('telescope.sorters').empty(),
+          })
+          :find()
+      end
+
       -- NOTE: turns out it's super annoying to only have access to git_files in a git project, since git_files does not let you search for untracked files
       -- vim.keymap.set('n', '<leader>sf', function()
       --   if is_git() then
@@ -389,7 +430,8 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-      vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
+      -- vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
+      vim.keymap.set('n', '<leader>sg', live_multigrep, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       -- It's also possible to pass additional configuration options.
