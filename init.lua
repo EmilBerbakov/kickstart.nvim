@@ -141,7 +141,7 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
 
 -- Quick save and close
-vim.keymap.set('n', '<C-M-q>', ':wq <enter>', { desc = 'Close and save buffer' })
+vim.keymap.set('n', '<C-M-q>', '<CMD>wq <CR>', { desc = 'Close and save buffer' })
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -181,17 +181,8 @@ rtp:prepend(lazypath)
 --  To update plugins you can run
 --    :Lazy update
 --
--- NOTE: Here is where you install your plugins.
 require('lazy').setup({
-  -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
-
-  -- NOTE: Plugins can also be added by using a table,
-  -- with the first argument being the link and the following
-  -- keys can be used to configure plugin behavior/loading/etc.
-  --
-  -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
-  --
 
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
@@ -458,7 +449,7 @@ require('lazy').setup({
         })
       end, { desc = '[/] Fuzzily search in current buffer' })
       vim.keymap.set('n', '<leader>b<leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
-      vim.keymap.set('n', '<leader>bc', ':%bd|e#|bd# <ENTER>', { desc = '[C]lear other buffers', silent = true })
+      vim.keymap.set('n', '<leader>bc', '<CMD>%bd|e#|bd# <CR>', { desc = '[C]lear other buffers', silent = true })
     end,
   },
 
@@ -515,20 +506,20 @@ require('lazy').setup({
           -- For now, just check to see if you're looking at a component file within an Angular project. Only then can you attempt to jump around
           if vim.fs.root(0, 'angular.json') and string.find(vim.fn.expand '%t', '.component.') then
             -- Goto Template Code
-            map('<M-h>', ':e %<.html <ENTER>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
-            map('<C-M-h>', ':vsplit %<.html <ENTER>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
-            map('gah', ':e %<.html <ENTER>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
-            map('gash', ':vsplit %<.html <ENTER>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
+            map('<M-h>', '<CMD>e %<.html <CR>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
+            map('<C-M-h>', '<CMD>vsplit %<.html <CR>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
+            map('gah', '<CMD>e %<.html <CR>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
+            map('gash', '<CMD>vsplit %<.html <CR>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
             -- Goto Component Code
-            map('<M-t>', ':e %<.ts <ENTER>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
-            map('<C-M-t>', ':vsplit %<.ts <ENTER>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
-            map('gat', ':e %<.ts <ENTER>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
-            map('gast', ':vsplit %<.ts <ENTER>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
+            map('<M-t>', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
+            map('<C-M-t>', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
+            map('gat', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
+            map('gast', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
             -- Goto SCSS
-            map('<M-c>', ':e %<.scss <ENTER>', '[G]oto [A]ngular S[C]SS', nil, true)
-            map('<C-M-c>', ':vsplit %<.scss <ENTER>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
-            map('gac', ':e %<.scss <ENTER>', '[G]oto [A]ngular S[C]SS', nil, true)
-            map('gasc', ':vsplit %<.scss <ENTER>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
+            map('<M-c>', '<CMD>e %<.scss <CR>', '[G]oto [A]ngular S[C]SS', nil, true)
+            map('<C-M-c>', '<CMD>vsplit %<.scss <CR>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
+            map('gac', '<CMD>e %<.scss <CR>', '[G]oto [A]ngular S[C]SS', nil, true)
+            map('gasc', '<CMD>vsplit %<.scss <CR>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
           end
 
           -- Rename the variable under your cursor.
@@ -960,6 +951,15 @@ require('lazy').setup({
       return config
     end,
   },
+  {
+    'stevearc/oil.nvim',
+    -- dependencies = { { "nvim-mini/mini.icons", opts = {} } },
+    lazy = false,
+    opts = function()
+      require('oil').setup()
+      vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
+    end,
+  },
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
@@ -978,6 +978,7 @@ require('lazy').setup({
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
       require('mini.surround').setup()
+      require('mini.notify').setup()
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -1000,7 +1001,7 @@ require('lazy').setup({
   },
   { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
-    build = ':TSUpdate',
+    build = '<CMD>TSUpdate',
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
@@ -1023,7 +1024,6 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
-
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
   -- place them in the correct locations.
@@ -1037,7 +1037,7 @@ require('lazy').setup({
   require 'kickstart.plugins.indent_line',
   -- require 'kickstart.plugins.lint',
   require 'kickstart.plugins.autopairs',
-  require 'kickstart.plugins.neo-tree',
+  -- require 'kickstart.plugins.neo-tree',
   require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -1107,7 +1107,7 @@ vim.api.nvim_create_autocmd('ColorScheme', {
     assert(file)
     file:write(colorscheme)
     file:close()
-    vim.notify('Setting WezTerm color to ' .. colorscheme)
+    vim.notify('Setting color to ' .. colorscheme)
   end,
 })
 
@@ -1122,16 +1122,12 @@ local function init_color()
   else
     vim.cmd.colorscheme 'catppuccin-mocha'
   end
-  --NOTE: Doesn't do anything, yet. Can refresh manually and it catches up, though
-  --if is_wezterm then
-  --  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<ENTER><C-S-r>', true, false, true), 'n', false)
-  --end
 end
 
 init_color()
 
 --ColorScheme shortcuts
-vim.keymap.set('n', '<leader>c', ':Telescope colorscheme <ENTER>', { desc = '[c]olorscheme' })
+vim.keymap.set('n', '<leader>c', '<CMD>Telescope colorscheme <CR>', { desc = '[c]olorscheme' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
