@@ -9,6 +9,15 @@ vim.g.loaded_netrwPlugin = 1
 --Both Determine if I have a Nerd Font available as well as if I am on Windows or not
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
 local is_wezterm = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm'
+-- if is_windows then
+--   vim.opt.fileformats = { 'dos', 'unix', 'mac' }
+--   vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
+--     pattern = '*',
+--     callback = function()
+--       vim.opt_local.fileformat = 'dos'
+--     end,
+--   })
+-- end
 local function already_has_nerd_font()
   local cmd
   if is_windows then
@@ -396,7 +405,7 @@ require('lazy').setup({
               :flatten()
               :totable()
           end,
-          require('telescope.make_entry').gen_from_vimgrep(opts),
+          entry_maker = require('telescope.make_entry').gen_from_vimgrep(opts),
           cwd = opts.cwd,
         }
         require('telescope.pickers')
@@ -1096,29 +1105,35 @@ end
 
 local nvim_colorschemes_table = nvim_colorschemes(colorschemes)
 
-vim.api.nvim_create_autocmd('ColorScheme', {
-  group = vim.api.nvim_create_augroup('wezterm_colorscheme', { clear = true }),
-  callback = function(args)
-    local colorscheme = colorschemes[args.match] or 'Catppuccin Mocha'
-    local colorfile = (os.getenv 'WEZTERM_CONFIG_DIR' or os.getenv 'HOME' or os.getenv 'USERPROFILE') .. '\\wezterm_colorscheme'
-    colorfile = colorfile:gsub('\\\\', '/')
-    assert(type(colorfile) == 'string')
-    local file = io.open(colorfile, 'w')
-    assert(file)
-    file:write(colorscheme)
-    file:close()
-    vim.notify('Setting color to ' .. colorscheme)
-  end,
-})
+if is_wezterm then
+  vim.api.nvim_create_autocmd('ColorScheme', {
+    group = vim.api.nvim_create_augroup('wezterm_colorscheme', { clear = true }),
+    callback = function(args)
+      local colorscheme = colorschemes[args.match] or 'Catppuccin Mocha'
+      local colorfile = (os.getenv 'WEZTERM_CONFIG_DIR' or os.getenv 'HOME' or os.getenv 'USERPROFILE') .. '\\wezterm_colorscheme'
+      colorfile = colorfile:gsub('\\\\', '/')
+      assert(type(colorfile) == 'string')
+      local file = io.open(colorfile, 'w')
+      assert(file)
+      file:write(colorscheme)
+      file:close()
+      vim.notify('Setting color to ' .. colorscheme)
+    end,
+  })
+end
 
 local function init_color()
-  local colorfile = (os.getenv 'WEZTERM_CONFIG_DIR' or os.getenv 'HOME' or os.getenv 'USERPROFILE') .. '\\wezterm_colorscheme'
-  colorfile = colorfile:gsub('\\\\', '/')
-  local file = io.open(colorfile, 'r')
-  if file then
-    local color = file:read '*a'
-    file:close()
-    vim.cmd.colorscheme(nvim_colorschemes_table[color])
+  if is_wezterm then
+    local colorfile = (os.getenv 'WEZTERM_CONFIG_DIR' or os.getenv 'HOME' or os.getenv 'USERPROFILE') .. '\\wezterm_colorscheme'
+    colorfile = colorfile:gsub('\\\\', '/')
+    local file = io.open(colorfile, 'r')
+    if file then
+      local color = file:read '*a'
+      file:close()
+      vim.cmd.colorscheme(nvim_colorschemes_table[color])
+    else
+      vim.cmd.colorscheme 'catppuccin-mocha'
+    end
   else
     vim.cmd.colorscheme 'catppuccin-mocha'
   end
