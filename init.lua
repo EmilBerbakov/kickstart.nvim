@@ -518,48 +518,57 @@ require('lazy').setup({
           if vim.fs.root(0, 'angular.json') and string.find(vim.fn.expand '%t', '.component.') then
             local has_template = vim.fn.filereadable(vim.fn.expand '%<.html')
             local has_scss = vim.fn.filereadable(vim.fn.expand '%<.scss')
-            -- Goto Template Code
-            map(
-              '<M-h>',
-              has_template and '<CMD>e %<.html <CR>' or vim.notify('There is no Template for this component', vim.diagnostic.severity.WARN),
-              '[G]oto [A]ngular Template ([H]TML)',
-              nil,
-              true
-            )
-            map(
-              '<C-M-h>',
-              has_template and '<CMD>vsplit %<.html <CR>' or vim.notify('There is no Template for this component', vim.diagnostic.severity.WARN),
-              '[G]oto [A]ngular [S]plit Template ([H]TML)',
-              nil,
-              true
-            )
-            if has_template then
-              map('gah', '<CMD>e %<.html <CR>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
-              map('gash', '<CMD>vsplit %<.html <CR>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
+
+            if vim.fn.expand '%' ~= vim.fn.expand '%<.html' then
+              -- Goto Template Code
+              map('<M-h>', function()
+                if has_template == 1 then
+                  return '<CMD>e %<.html <CR>'
+                else
+                  return vim.notify('There is no Template for this component', vim.diagnostic.severity.WARN)
+                end
+              end, '[G]oto [A]ngular Template ([H]TML)', nil, true)
+              map('<C-M-h>', function()
+                if has_template == 1 then
+                  return '<CMD>vsplit %<.html <CR>'
+                else
+                  return vim.notify('There is no Template for this component', vim.diagnostic.severity.WARN)
+                end
+              end, '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
+              if has_template == 1 then
+                map('gah', '<CMD>e %<.html <CR>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
+                map('gash', '<CMD>vsplit %<.html <CR>', '[G]oto [A]ngular [S]plit Template ([H]TML)', nil, true)
+              end
             end
-            -- Goto Component Code
-            map('<M-t>', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
-            map('<C-M-t>', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
-            map('gat', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
-            map('gast', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
-            -- Goto SCSS
-            map(
-              '<M-c>',
-              has_scss and '<CMD>e %<.scss <CR>' or vim.notify('There is no SCSS for this component', vim.diagnostic.severity.WARN),
-              '[G]oto [A]ngular S[C]SS',
-              nil,
-              true
-            )
-            map(
-              '<C-M-c>',
-              has_scss and '<CMD>vsplit %<.scss <CR>' or vim.notify('There is no SCSS for this component', vim.diagnostic.severity.WARN),
-              '[G]oto [A]ngular [S]plit S[C]SS',
-              nil,
-              true
-            )
-            if has_scss then
-              map('gac', '<CMD>e %<.scss <CR>', '[G]oto [A]ngular S[C]SS', nil, true)
-              map('gasc', '<CMD>vsplit %<.scss <CR>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
+
+            if vim.fn.expand '%' ~= vim.fn.expand '%<.ts' then
+              -- Goto Component Code
+              map('<M-t>', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
+              map('<C-M-t>', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
+              map('gat', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
+              map('gast', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
+            end
+
+            if vim.fn.expand '%' ~= vim.fn.expand '%<.scss' then
+              -- Goto SCSS
+              map('<M-c>', function()
+                if has_scss == 1 then
+                  return '<CMD>e %<.scss <CR>'
+                else
+                  return vim.notify('There is no SCSS for this component', vim.diagnostic.severity.WARN)
+                end
+              end, '[G]oto [A]ngular S[C]SS', nil, true)
+              map('<C-M-c>', function()
+                if has_scss == 1 then
+                  return '<CMD>vsplit %<.scss <CR>'
+                else
+                  return vim.notify('There is no SCSS for this component', vim.diagnostic.severity.WARN)
+                end
+              end, '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
+              if has_scss == 1 then
+                map('gac', '<CMD>e %<.scss <CR>', '[G]oto [A]ngular S[C]SS', nil, true)
+                map('gasc', '<CMD>vsplit %<.scss <CR>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
+              end
             end
           end
 
