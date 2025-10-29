@@ -1,13 +1,11 @@
-# What I learned to do to get this to work on WSL:
-1. install brew
-2. brew install neovim
-3. git clone my kickstart fork
-4. make sure nvm is on the right node version for your project
-5. make sure the angular language service is on the right version for your project
-6. ~~don't use :Mason install~~
-   ~~- by this, I mean just use the servers table in init.lua and it will just work. trying to download it through :Mason results in Neovim panicking and not knowing where the bin commands are~~
-   Skill issue, tbh
-7. Specifically for Angular: make sure node is on the right version, as well as the angular-language-server
+# WSL Notes
+To have the wezterm_colorscheme stuff work, add this to the bashrc:
+```bash
+if [[ -v WSL_DISTRO_NAME ]]; then 
+	export WIN_HOME=$(wslpath "$(cmd.exe /C "echo %USERPROFILE%" 2>/dev/null)" | tr -d '\r')
+	export WEZTERM_CONFIG_DIR="$WIN_HOME/.config/wezterm"
+fi
+```
 
 # kickstart.nvim
 
