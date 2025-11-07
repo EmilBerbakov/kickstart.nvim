@@ -516,8 +516,8 @@ require('lazy').setup({
           -- navigate to the file stored in the table based on key press instead of blindly going into something that might not exist
           -- For now, just check to see if you're looking at a component file within an Angular project. Only then can you attempt to jump around
           if vim.fs.root(0, 'angular.json') and string.find(vim.fn.expand '%t', '.component.') then
-            local has_template = vim.fn.filereadable(vim.fn.expand '%<.html')
-            local has_scss = vim.fn.filereadable(vim.fn.expand '%<.scss')
+            local has_template = vim.fn.filereadable(vim.fn.expand '%<' .. '.html')
+            local has_scss = vim.fn.filereadable(vim.fn.expand '%<' .. '.scss')
 
             if vim.fn.expand '%' ~= vim.fn.expand '%<.html' then
               -- Goto Template Code
@@ -541,7 +541,7 @@ require('lazy').setup({
               end
             end
 
-            if vim.fn.expand '%' ~= vim.fn.expand '%<.ts' then
+            if vim.fn.expand '%' ~= vim.fn.expand '%<' .. '.ts' then
               -- Goto Component Code
               map('<M-t>', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
               map('<C-M-t>', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil, true)
@@ -714,20 +714,6 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         -- vtsls is a faster ts_ls with server-side filtering
         vtsls = {},
-        lua_ls = {
-          -- cmd = { ... },
-          -- filetypes = { ... },
-          -- capabilities = {},
-          settings = {
-            Lua = {
-              completion = {
-                callSnippet = 'Replace',
-              },
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
-              -- diagnostics = { disable = { 'missing-fields' } },
-            },
-          },
-        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -769,9 +755,31 @@ require('lazy').setup({
         rubocop = {},
         omnisharp = {},
         powershell_es = {},
+        lua_ls = {
+          -- cmd = { ... },
+          -- filetypes = { ... },
+          -- capabilities = {},
+          settings = {
+            Lua = {
+              completion = {
+                callSnippet = 'Replace',
+              },
+              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+              -- diagnostics = { disable = { 'missing-fields' } },
+            },
+          },
+        },
       }
 
       --TODO: Make this prettier; probably adjust the table to point to the file types and then make a function that does the whole .capabilities and enable thing
+
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'lua',
+        callback = function()
+          conditional_servers.lua_ls.capabilities = vim.tbl_deep_extend('force', {}, capabilities, conditional_servers.lua_ls.capabilities or {})
+          vim.lsp.enable 'lua_ls'
+        end,
+      })
 
       vim.api.nvim_create_autocmd('FileType', {
         pattern = { 'ruby', 'eruby' },
