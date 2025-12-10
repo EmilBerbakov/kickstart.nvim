@@ -751,9 +751,10 @@ require('lazy').setup({
       }
 
       local conditional_servers = {
+        angularls = {},
         ruby_ls = {},
         rubocop = {},
-        omnisharp = {},
+        csharp_ls = {},
         powershell_es = {},
         lua_ls = {
           -- cmd = { ... },
@@ -773,13 +774,13 @@ require('lazy').setup({
 
       --TODO: Make this prettier; probably adjust the table to point to the file types and then make a function that does the whole .capabilities and enable thing
 
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'lua',
-        callback = function()
-          conditional_servers.lua_ls.capabilities = vim.tbl_deep_extend('force', {}, capabilities, conditional_servers.lua_ls.capabilities or {})
-          vim.lsp.enable 'lua_ls'
-        end,
-      })
+      -- vim.api.nvim_create_autocmd('FileType', {
+      --   pattern = 'lua',
+      --   callback = function()
+      --     conditional_servers.lua_ls.capabilities = vim.tbl_deep_extend('force', {}, capabilities, conditional_servers.lua_ls.capabilities or {})
+      --     vim.lsp.enable 'lua_ls'
+      --   end,
+      -- })
 
       vim.api.nvim_create_autocmd('FileType', {
         pattern = { 'ruby', 'eruby' },
@@ -791,13 +792,31 @@ require('lazy').setup({
         end,
       })
 
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'cs',
-        callback = function()
-          conditional_servers.omnisharp.capabilities = vim.tbl_deep_extend('force', {}, capabilities, conditional_servers.omnisharp.capabilities or {})
-          vim.lsp.enable 'omnisharp'
-        end,
-      })
+      vim.lsp.config.lua_ls = {
+        cmd = { 'lua-language-server' },
+        filetypes = { 'lua' },
+      }
+
+      vim.lsp.config.csharp_ls = {
+        cmd = { 'csharp-ls' },
+        filetypes = { 'cs' },
+        root_markers = { '*.sln', '*.csproj' },
+        -- root_dir = require('lspconfig').util.root_pattern('*.sln', '*.csproj'),
+      }
+
+      -- vim.lsp.config.angularls = {
+      --   cmd = { 'ngserver' },
+      --   filetypes = { 'html', 'ts', 'typescript' },
+      --   root_markers = { 'angular.json' },
+      -- }
+
+      -- vim.api.nvim_create_autocmd('FileType', {
+      --   pattern = 'cs',
+      --   callback = function()
+      --     conditional_servers.csharp_ls.capabilities = vim.tbl_deep_extend('force', {}, capabilities, conditional_servers.csharp_ls.capabilities or {})
+      --     vim.lsp.enable 'csharp_ls'
+      --   end,
+      -- })
 
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'ps1',
@@ -985,32 +1004,32 @@ require('lazy').setup({
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
-  {
-    'nvim-mini/mini.starter',
-    event = 'VimEnter',
-    opts = function()
-      local starter = require 'mini.starter'
-      local config = {
-        evaluate_single = true,
-        header = table.concat({
-          ' /$$$$$$$$               /$$ /$$     /$$   /$$ /$$    /$$ /$$$$$$ /$$      /$$',
-          '| $$_____/              |__/| $$    | $$$ | $$| $$   | $$|_  $$_/| $$$    /$$$',
-          '| $$       /$$$$$$/$$$$  /$$| $$    | $$$$| $$| $$   | $$  | $$  | $$$$  /$$$$',
-          '| $$$$$   | $$_  $$_  $$| $$| $$    | $$ $$ $$|  $$ / $$/  | $$  | $$ $$/$$ $$',
-          '| $$__/   | $$ \\ $$ \\ $$| $$| $$    | $$  $$$$ \\  $$ $$/   | $$  | $$  $$$| $$',
-          '| $$      | $$ | $$ | $$| $$| $$    | $$\\  $$$  \\  $$$/    | $$  | $$\\  $ | $$',
-          '| $$$$$$$$| $$ | $$ | $$| $$| $$ /$$| $$ \\  $$   \\  $/    /$$$$$$| $$ \\/  | $$',
-          '|________/|__/ |__/ |__/|__/|__/|__/|__/  \\__/    \\_/    |______/|__/     |__/',
-        }, '\n'),
-        content_hooks = {
-          starter.gen_hook.aligning('center', 'center'),
-          starter.gen_hook.adding_bullet('$ ', false),
-        },
-        silent = true,
-      }
-      return config
-    end,
-  },
+  -- {
+  --   'nvim-mini/mini.starter',
+  --   event = 'VimEnter',
+  --   opts = function()
+  --     local starter = require 'mini.starter'
+  --     local config = {
+  --       evaluate_single = true,
+  --       header = table.concat({
+  --         ' /$$$$$$$$               /$$ /$$     /$$   /$$ /$$    /$$ /$$$$$$ /$$      /$$',
+  --         '| $$_____/              |__/| $$    | $$$ | $$| $$   | $$|_  $$_/| $$$    /$$$',
+  --         '| $$       /$$$$$$/$$$$  /$$| $$    | $$$$| $$| $$   | $$  | $$  | $$$$  /$$$$',
+  --         '| $$$$$   | $$_  $$_  $$| $$| $$    | $$ $$ $$|  $$ / $$/  | $$  | $$ $$/$$ $$',
+  --         '| $$__/   | $$ \\ $$ \\ $$| $$| $$    | $$  $$$$ \\  $$ $$/   | $$  | $$  $$$| $$',
+  --         '| $$      | $$ | $$ | $$| $$| $$    | $$\\  $$$  \\  $$$/    | $$  | $$\\  $ | $$',
+  --         '| $$$$$$$$| $$ | $$ | $$| $$| $$ /$$| $$ \\  $$   \\  $/    /$$$$$$| $$ \\/  | $$',
+  --         '|________/|__/ |__/ |__/|__/|__/|__/|__/  \\__/    \\_/    |______/|__/     |__/',
+  --       }, '\n'),
+  --       content_hooks = {
+  --         starter.gen_hook.aligning('center', 'center'),
+  --         starter.gen_hook.adding_bullet('$ ', false),
+  --       },
+  --       silent = true,
+  --     }
+  --     return config
+  --   end,
+  -- },
   {
     'stevearc/oil.nvim',
     -- dependencies = { { "nvim-mini/mini.icons", opts = {} } },
