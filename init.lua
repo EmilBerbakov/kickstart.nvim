@@ -1171,7 +1171,7 @@ if is_wezterm then
       assert(file)
       file:write(colorscheme)
       file:close()
-      vim.notify('Setting color to ' .. colorscheme)
+      -- vim.notify('Setting color to ' .. colorscheme)
     end,
   })
 end
