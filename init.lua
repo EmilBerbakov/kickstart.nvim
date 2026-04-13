@@ -1,38 +1,14 @@
--- Set <space> as the leader key
--- See `:help mapleader`
---  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
---Both Determine if I have a Nerd Font available as well as if I am on Windows or not
-local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
+-- I'll either be using Wezterm or have a Nerd Font downloaded at all times, so no need for trickery like my personal setup
 local is_wezterm = string.lower(vim.env.TERM_PROGRAM or '') == 'wezterm'
--- if is_windows then
---   vim.opt.fileformats = { 'dos', 'unix', 'mac' }
---   vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
---     pattern = '*',
---     callback = function()
---       vim.opt_local.fileformat = 'dos'
---     end,
---   })
--- end
-local function already_has_nerd_font()
-  local cmd
-  if is_windows then
-    cmd = { 'pwsh.exe', '-NoLogo', '-NoProfile', '-Command', 'Get-ChildItem $env:LOCALAPPDATA\\Microsoft\\Windows\\Fonts | Where-Object Name -Like *Nerd*' }
-  else
-    cmd = { 'fc-list', ':family', '|', 'grep', '-i', 'Nerd' }
-  end
-  local handle = vim.fn.system(cmd)
-  return (vim.v.shell_error == 0 and vim.trim(handle) ~= '')
-end
-local nerd_font_check = is_wezterm or vim.env.VERIFIED_NERD_FONT == 'True'
-vim.g.have_nerd_font = nerd_font_check or already_has_nerd_font()
+vim.g.have_nerd_font = true
+require('vim._core.ui2').enable {}
 
 -- Conditionally hide the cmdline
--- TODO: work on this; it's not quite doing what I want
 local function set_cmdheight()
   vim.opt.cmdheight = vim.fn.getcmdline() == '' and 0 or 1
 end
@@ -41,7 +17,7 @@ vim.api.nvim_create_autocmd({ 'CmdlineEnter' }, {
     vim.opt.cmdheight = 1
   end,
 })
-vim.api.nvim_create_autocmd({ 'CmdlineLeave' }, {
+vim.api.nvim_create_autocmd({ 'CmdlineChanged' }, {
   callback = set_cmdheight,
 })
 vim.api.nvim_create_autocmd({ 'BufEnter' }, {
@@ -52,17 +28,11 @@ vim.keymap.set('n', '<leader>tc', function()
   vim.opt.cmdheight = 1 - vim.opt.cmdheight._value
 end, { desc = 'Toggle [c]mdheight' })
 
--- [[ Setting options ]]
--- See `:help vim.o`
--- NOTE: You can change these options as you wish!
---  For more options, you can see `:help option-list`
 vim.o.number = true
 vim.opt.relativenumber = true
 
--- Enable mouse mode, can be useful for resizing splits for example!
 vim.o.mouse = 'a'
 
--- Don't show the mode, since it's already in the status line
 vim.o.showmode = false
 
 -- Sync clipboard between OS and Neovim.
@@ -73,17 +43,13 @@ vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
 
--- Enable break indent
 vim.o.breakindent = true
 
--- Save undo history
 vim.o.undofile = true
 
--- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
 vim.o.ignorecase = true
 vim.o.smartcase = true
 
--- Keep signcolumn on by default
 vim.o.signcolumn = 'yes'
 
 -- Decrease update time
@@ -96,14 +62,6 @@ vim.o.timeoutlen = 300
 vim.o.splitright = true
 vim.o.splitbelow = true
 
--- Sets how neovim will display certain whitespace characters in the editor.
---  See `:help 'list'`
---  and `:help 'listchars'`
---
---  Notice listchars is set using `vim.opt` instead of `vim.o`.
---  It is very similar to `vim.o` but offers an interface for conveniently interacting with tables.
---   See `:help lua-options`
---   and `:help lua-options-guide`
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
@@ -116,33 +74,19 @@ vim.o.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.o.scrolloff = 10
 
--- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
--- instead raise a dialog asking if you wish to save the current file(s)
--- See `:help 'confirm'`
 vim.o.confirm = true
 
--- [[ Basic Keymaps ]]
---  See `:help vim.keymap.set()`
+-- Terminal Settings
+vim.opt.shell = 'pwsh -nologo'
+vim.keymap.set('n', '<leader>T', '<CMD> split | term<CR>i<space>clear<CR>', { desc = 'Open [T]erminal' })
+vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
--- Clear highlights on search when pressing <Esc> in normal mode
---  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Open Diagnostic [Q]uickfix List' })
 vim.keymap.set('n', '<leader>df', '<cmd> lua vim.diagnostic.open_float() <CR>', { desc = 'Open Diagnostic [f]loating Window' })
 
--- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
--- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
--- is not what someone will guess without a bit more experience.
---
--- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
--- or just use <C-\><C-n> to exit terminal mode
-vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-
--- Keybinds to make split navigation easier.
---  Use CTRL+<hjkl> to switch between windows
---
 --  See `:help wincmd` for a list of all window commands
 vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
@@ -152,12 +96,7 @@ vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
 
 -- Quick save and close
 vim.keymap.set('n', '<C-M-q>', '<CMD>wq <CR>', { desc = 'Close and save buffer' })
--- [[ Basic Autocommands ]]
---  See `:help lua-guide-autocommands`
 
--- Highlight when yanking (copying) text
---  Try it with `yap` in normal mode
---  See `:help vim.hl.on_yank()`
 vim.api.nvim_create_autocmd('TextYankPost', {
   desc = 'Highlight when yanking (copying) text',
   group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
@@ -180,17 +119,6 @@ end
 ---@type vim.Option
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
-
--- [[ Configure and install plugins ]]
---
---  To check the current status of your plugins, run
---    :Lazy
---
---  You can press `?` in this menu for help. Use `:q` to close the window
---
---  To update plugins you can run
---    :Lazy update
---
 require('lazy').setup({
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
@@ -204,12 +132,6 @@ require('lazy').setup({
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
-    },
-  },
-  {
-    'catgoose/nvim-colorizer.lua',
-    ft = { 'css', 'scss', 'sass' },
-    opts = { -- set to setup table
     },
   },
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
@@ -370,11 +292,6 @@ require('lazy').setup({
 
       -- See `:help telescope.builtin`
       local builtin = require 'telescope.builtin'
-
-      -- local function is_git()
-      --   vim.fn.system 'git rev-parse --is-inside-work-tree'
-      --   return vim.v.shell_error == 0
-      -- end
 
       --Search Actions
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
@@ -590,7 +507,8 @@ require('lazy').setup({
           -- Jump to the definition of the word under your cursor.
           --  This is where a variable was first declared, or where a function is defined, etc.
           --  To jump back, press <C-t>.
-          map('grd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          -- map('grd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('grd', vim.lsp.buf.definition, '[G]oto [D]efinition')
 
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
@@ -609,58 +527,41 @@ require('lazy').setup({
           --  the definition of its *type*, not where it was *defined*.
           map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
 
-          -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
-          ---@param client vim.lsp.Client
-          ---@param method vim.lsp.protocol.Method
-          ---@param bufnr? integer some lsp support methods only in specific files
-          ---@return boolean
-          local function client_supports_method(client, method, bufnr)
-            if vim.fn.has 'nvim-0.11' == 1 then
-              return client:supports_method(method, bufnr)
-            else
-              ---@diagnostic disable-next-line: param-type-mismatch
-              return client.supports_method(method, { bufnr = bufnr })
-            end
-          end
-
           -- The following two autocommands are used to highlight references of the
           -- word under your cursor when your cursor rests there for a little while.
           --    See `:help CursorHold` for information about when this is executed
           --
           -- When you move your cursor, the highlights will be cleared (the second autocommand).
-          local client = vim.lsp.get_client_by_id(event.data.client_id)
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
-            local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
-            vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-              buffer = event.buf,
-              group = highlight_augroup,
-              callback = vim.lsp.buf.document_highlight,
-            })
+          local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
+          vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+            buffer = event.buf,
+            group = highlight_augroup,
+            callback = vim.lsp.buf.document_highlight,
+          })
 
-            vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
-              buffer = event.buf,
-              group = highlight_augroup,
-              callback = vim.lsp.buf.clear_references,
-            })
+          vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
+            buffer = event.buf,
+            group = highlight_augroup,
+            callback = vim.lsp.buf.clear_references,
+          })
 
-            vim.api.nvim_create_autocmd('LspDetach', {
-              group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
-              callback = function(event2)
-                vim.lsp.buf.clear_references()
-                vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event2.buf }
-              end,
-            })
-          end
+          vim.api.nvim_create_autocmd('LspDetach', {
+            group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
+            callback = function(event2)
+              vim.lsp.buf.clear_references()
+              vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event2.buf }
+            end,
+          })
+          -- end
 
           -- The following code creates a keymap to toggle inlay hints in your
           -- code, if the language server you are using supports them
           --
           -- This may be unwanted, since they displace some of your code
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
-            map('<leader>th', function()
-              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-            end, '[T]oggle Inlay [H]ints')
-          end
+          map('<leader>th', function()
+            vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
+          end, '[T]oggle Inlay [H]ints')
+          -- end
         end,
       })
 
@@ -706,8 +607,8 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        angularls = {},
-        cssls = {},
+        -- angularls = {},
+        -- cssls = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -752,6 +653,7 @@ require('lazy').setup({
 
       local conditional_servers = {
         angularls = {},
+        sqls = {},
         ruby_ls = {},
         rubocop = {},
         csharp_ls = {},
@@ -800,15 +702,32 @@ require('lazy').setup({
       vim.lsp.config.csharp_ls = {
         cmd = { 'csharp-ls' },
         filetypes = { 'cs' },
-        root_markers = { '*.sln', '*.csproj' },
-        -- root_dir = require('lspconfig').util.root_pattern('*.sln', '*.csproj'),
+        root_markers = { '*.csproj' },
       }
 
-      -- vim.lsp.config.angularls = {
-      --   cmd = { 'ngserver' },
-      --   filetypes = { 'html', 'ts', 'typescript' },
-      --   root_markers = { 'angular.json' },
-      -- }
+      vim.lsp.config.angularls = {
+        cmd = {
+          'ngserver',
+          '--stdio',
+          '--tsProbeLocations',
+          'C:/Repos/Angular/DarwinEHR/node_modules',
+          '--ngProbeLocations',
+          'C:/Repos/Angular/DarwinEHR/node_modules',
+        },
+        filetypes = { 'html', 'htmlangular', 'typescript' },
+        root_markers = { 'angular.json' },
+      }
+
+      vim.lsp.config.sqls = {
+        settings = {
+          sqls = {
+            connections = {
+              driver = 'mssql',
+              dataSourceName = 'Data Source=DCICORDEVFDB.dciinc.org;Integrated Security=True;Pooling=False',
+            },
+          },
+        },
+      }
 
       -- vim.api.nvim_create_autocmd('FileType', {
       --   pattern = 'cs',
@@ -878,15 +797,15 @@ require('lazy').setup({
       {
         'L3MON4D3/LuaSnip',
         version = '2.*',
-        build = (function()
-          -- Build Step is needed for regex support in snippets.
-          -- This step is not supported in many windows environments.
-          -- Remove the below condition to re-enable on windows.
-          if is_windows or vim.fn.executable 'make' == 0 then
-            return
-          end
-          return 'make install_jsregexp'
-        end)(),
+        -- build = (function()
+        --   -- Build Step is needed for regex support in snippets.
+        --   -- This step is not supported in many windows environments.
+        --   -- Remove the below condition to re-enable on windows.
+        --   if is_windows or vim.fn.executable 'make' == 0 then
+        --     return
+        --   end
+        --   return 'make install_jsregexp'
+        -- end)(),
         dependencies = {
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
@@ -960,7 +879,10 @@ require('lazy').setup({
       fuzzy = { implementation = 'prefer_rust' },
       -- Shows a signature help window while you type arguments for a function
       -- NOTE: <C-k> while in insert mode is the default shortcut to toggle signature on and off
-      signature = { enabled = true },
+      signature = { enabled = true, trigger = {
+        show_on_trigger_character = false,
+        show_on_insert_on_trigger_character = false,
+      } },
     },
   },
 
@@ -969,38 +891,39 @@ require('lazy').setup({
   -- change the command in the config to whatever the name of that colorscheme is.
   --
   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
+
   {
     'catppuccin/nvim',
-    flavour = function()
-      local theme = vim.env.OS_THEME or 'Dark'
-      local value = theme == 'Dark' and 'mocha' or 'latte'
-      return value
-    end,
     name = 'catppuccin',
     priority = 1000,
-    auto_integrations = true,
     config = function()
       require('catppuccin').setup {
+        auto_integrations = true,
+        transparent_background = true,
         float = {
-          transparent = false,
+          transparent = true,
           solid = false,
         },
       }
-      vim.o.background = string.lower(vim.env.OS_THEME or 'dark')
-      vim.cmd.colorscheme 'catppuccin'
     end,
   },
 
-  { 'folke/tokyonight.nvim', priority = 1000 },
+  -- { 'folke/tokyonight.nvim', priority = 1000 },
+  -- {
+  --   'ellisonleao/gruvbox.nvim',
+  --   priority = 1000,
+  --   config = function()
+  --     vim.o.background = 'dark'
+  --   end,
+  -- },
+  -- { 'rose-pine/neovim', priority = 1000 },
+
   {
-    'ellisonleao/gruvbox.nvim',
-    priority = 1000,
+    'f-person/auto-dark-mode.nvim',
     config = function()
-      vim.o.background = 'dark'
+      require('auto-dark-mode').setup {}
     end,
   },
-  { 'rose-pine/neovim', priority = 1000 },
-
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
 
@@ -1143,6 +1066,7 @@ local colorschemes = {
   ['catppuccin-latte'] = 'Catppuccin Latte',
   ['catppuccin-macchiato'] = 'Catppuccin Macchiato',
   ['catppuccin-mocha'] = 'Catppuccin Mocha',
+  ['catppuccin'] = 'Catppuccin',
   ['gruvbox'] = 'GruvboxDark',
   ['rose-pine'] = 'rose-pine',
   ['rose-pine-moon'] = 'rose-pine-moon',
@@ -1171,32 +1095,28 @@ if is_wezterm then
       assert(file)
       file:write(colorscheme)
       file:close()
-      -- vim.notify('Setting color to ' .. colorscheme)
+      vim.notify('Setting color to ' .. colorscheme)
     end,
   })
-end
 
-local function init_color()
-  if is_wezterm then
-    local colorfile = (os.getenv 'WEZTERM_CONFIG_DIR' or os.getenv 'HOME' or os.getenv 'USERPROFILE') .. '\\wezterm_colorscheme'
-    colorfile = colorfile:gsub('\\\\', '/')
-    local file = io.open(colorfile, 'r')
-    if file then
-      local color = file:read '*a'
-      file:close()
-      vim.cmd.colorscheme(nvim_colorschemes_table[color])
-    else
-      vim.cmd.colorscheme 'catppuccin-mocha'
-    end
+  local colorfile = (os.getenv 'WEZTERM_CONFIG_DIR' or os.getenv 'HOME' or os.getenv 'USERPROFILE') .. '\\wezterm_colorscheme'
+  colorfile = colorfile:gsub('\\\\', '/')
+  local file = io.open(colorfile, 'r')
+  if file then
+    local color = file:read '*a'
+    file:close()
+    vim.cmd.colorscheme(nvim_colorschemes_table[color])
   else
     vim.cmd.colorscheme 'catppuccin-mocha'
   end
 end
 
-init_color()
-
 --ColorScheme shortcuts
 vim.keymap.set('n', '<leader>c', '<CMD>Telescope colorscheme <CR>', { desc = '[c]olorscheme' })
 
+--Refresh shortcut
+vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[r]estart Neovim' })
+vim.cmd.colorscheme 'catppuccin'
+vim.cmd.packadd 'nvim.difftool'
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
