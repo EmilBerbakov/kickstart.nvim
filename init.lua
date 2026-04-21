@@ -31,6 +31,7 @@ vim.pack.add {
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/stevearc/oil.nvim' },
 	--when updating, need to cd ~/.local/share/nvim/site/pack/core/opt/blink.cmp, and then cargo build --release
+	--don't need to do that when the force_version is set like I have it now in the setup below
 	{ src = 'https://github.com/saghen/blink.cmp' },
 	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
