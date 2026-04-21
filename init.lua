@@ -137,7 +137,7 @@ require('gitsigns').setup {
 local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls' }
 
 for _, server in ipairs(servers) do
-vim.lsp.enable(server)
+	vim.lsp.enable(server)
 end
 
 require('conform').setup({
@@ -187,40 +187,41 @@ MiniPick.registry.pack_list = function()
 			show = function(buf_id, items)
 				local lines = {}
 				for _, item in ipairs(items) do
-					table.insert(lines, string.format("%s(%s)",item.spec.name, item.spec.src))
+					table.insert(lines, string.format("%s(%s)", item.spec.name, item.spec.src))
 				end
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 			end,
 			choose = function(item)
-				local choice = vim.fn.confirm('Perform what action?', '&Update\n&Remove\n&Goto Source\n&Cancel', 4)
+				local choice = vim.fn.confirm('Perform what action?',
+					'&Update\n&Remove\n&Goto Source\n&Cancel', 4)
 				if choice == 1 then
-				vim.pack.update({item.spec.name})
-			elseif choice == 2 then
-				vim.pack.del({item.spec.name})
-			elseif choice == 4 then
-				vim.schedule(function()
-				MiniPick.builtin.resume()
+					vim.pack.update({ item.spec.name })
+				elseif choice == 2 then
+					vim.pack.del({ item.spec.name })
+				elseif choice == 4 then
+					vim.schedule(function()
+						MiniPick.builtin.resume()
+					end
+					)
+				elseif choice == 3 then
+					vim.ui.open(item.spec.src)
 				end
-				)
-			elseif choice == 3 then
-				vim.ui.open(item.spec.src)
 			end
-		end
 		}
 	})
 end
 
 vim.api.nvim_create_autocmd('TextYankPost', {
-  desc = 'Highlight when yanking (copying) text',
-  group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
-  callback = function()
-    vim.hl.on_yank()
-  end,
+	desc = 'Highlight when yanking (copying) text',
+	group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
+	callback = function()
+		vim.hl.on_yank()
+	end,
 })
 
 vim.keymap.set('n', '<leader>pc', pack_clean, { desc = '[P]lugin [C]leanup' })
-vim.keymap.set('n', '<leader>pu', vim.pack.update, {desc='[P]lugin [U]pdate'})
-vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, {desc='[P]lugin [L]ist'} )
+vim.keymap.set('n', '<leader>pu', vim.pack.update, { desc = '[P]lugin [U]pdate' })
+vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, { desc = '[P]lugin [L]ist' })
 
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
 vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
@@ -244,12 +245,15 @@ vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definitio
 	{ desc = '[G]oto [D]efinition' })
 vim.keymap.set('n', 'grD', function() MiniExtra.pickers.lsp { scope = 'declaration' } end,
 	{ desc = '[G]oto [D]eclaration' })
-vim.keymap.set('n', 'gri', function() MiniExtra.pickers.lsp { scope = 'implementation' } end, { desc = '[G]oto [I]mplementation' })
+vim.keymap.set('n', 'gri', function() MiniExtra.pickers.lsp { scope = 'implementation' } end,
+	{ desc = '[G]oto [I]mplementation' })
 vim.keymap.set('n', 'grr', function()
 	MiniExtra.pickers.lsp { scope = 'references' }
 end, { desc = '[G]oto [R]eferences' })
-vim.keymap.set('n', 'grt', function() MiniExtra.pickers.lsp { scope='type_definition' } end, { desc = '[G]oto [T]ype Definition' })
-vim.keymap.set('n', 'gO', function() MiniExtra.pickers.lsp { scope='document_symbol' } end, { desc = '[G]oto D[o]cument Symbol' })
+vim.keymap.set('n', 'grt', function() MiniExtra.pickers.lsp { scope = 'type_definition' } end,
+	{ desc = '[G]oto [T]ype Definition' })
+vim.keymap.set('n', 'gO', function() MiniExtra.pickers.lsp { scope = 'document_symbol' } end,
+	{ desc = '[G]oto D[o]cument Symbol' })
 vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
