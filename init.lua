@@ -25,6 +25,7 @@ vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
 	--for example, ts_ls needs typescript-language-server installed, which is done with
 	-- ``` npm install -g typescript-language-server typescript ```
+	-- For Windows, this path is %localappdata%\nvim-data\site\pack\core\opt\nvim-lspconfig\lsp
 	{ src = 'https://github.com/neovim/nvim-lspconfig' },
 	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
@@ -43,6 +44,7 @@ else
 	vim.pack.add { { src = 'https://github.com/f-person/auto-dark-mode.nvim' } }
 	vim.cmd.colorscheme 'catppuccin'
 	require('auto-dark-mode').setup()
+	vim.opt.shell = 'pwsh -nologo'
 end
 require('mini.extra').setup()
 require('mini.pick').setup()
@@ -83,12 +85,12 @@ miniclue.setup({
 	window = {
 		delay = 0,
 		config = {
-			width = 'auto',
+			width = '50',
 		}
 	},
 	clues = {
 		{ mode = 'n', keys = '<leader>s', desc = '[S]earch' },
-		{ mode = 'n', keys = '<leader>t', desc = '[T]oggle' },
+		{ mode = 'n', keys = '<leader>p', desc = '[P]lugin' },
 		{ mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
 		miniclue.gen_clues.square_brackets(),
 		miniclue.gen_clues.builtin_completion(),
@@ -110,7 +112,7 @@ require('mini.ai').setup { nlines = 500 }
 require('mini.icons').setup()
 require('oil').setup { view_options = { show_hidden = true } }
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
-require('blink.cmp').setup { fuzzy = { implementation = 'prefer_rust' }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
+require('blink.cmp').setup { fuzzy = { implementation = 'prefer_rust', prebuilt_binaries = { force_version = 'v*' } }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
 	default = { "lazydev", "lsp", "path", "snippets", "buffer" },
 	providers = {
 		lazydev = {
@@ -132,10 +134,10 @@ require('gitsigns').setup {
 }
 
 
-local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls' }
+local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls' }
 
 for _, server in ipairs(servers) do
-	vim.lsp.enable(server)
+vim.lsp.enable(server)
 end
 
 require('conform').setup({
@@ -177,11 +179,54 @@ local function pack_clean()
 	end
 end
 
-vim.keymap.set('n', '<leader>c', pack_clean, { desc = 'Plugin [C]leanup' })
+MiniPick.registry.pack_list = function()
+	MiniPick.start({
+		source = {
+			name = "Plugin List",
+			items = vim.pack.get(),
+			show = function(buf_id, items)
+				local lines = {}
+				for _, item in ipairs(items) do
+					table.insert(lines, string.format("%s(%s)",item.spec.name, item.spec.src))
+				end
+				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+			end,
+			choose = function(item)
+				local choice = vim.fn.confirm('Perform what action?', '&Update\n&Remove\n&Goto Source\n&Cancel', 4)
+				if choice == 1 then
+				vim.pack.update({item.spec.name})
+			elseif choice == 2 then
+				vim.pack.del({item.spec.name})
+			elseif choice == 4 then
+				vim.schedule(function()
+				MiniPick.builtin.resume()
+				end
+				)
+			elseif choice == 3 then
+				vim.ui.open(item.spec.src)
+			end
+		end
+		}
+	})
+end
+
+vim.api.nvim_create_autocmd('TextYankPost', {
+  desc = 'Highlight when yanking (copying) text',
+  group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
+  callback = function()
+    vim.hl.on_yank()
+  end,
+})
+
+vim.keymap.set('n', '<leader>pc', pack_clean, { desc = '[P]lugin [C]leanup' })
+vim.keymap.set('n', '<leader>pu', vim.pack.update, {desc='[P]lugin [U]pdate'})
+vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, {desc='[P]lugin [L]ist'} )
+
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
 vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
 vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Open [D]iagnostic [Q]uickfix List' })
 vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = 'Open [D]iagnostic [F]loating Window' })
+vim.keymap.set('n', '<leader>t', '<CMD> split | term<CR>i', { desc = 'Open [T]erminal' })
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
@@ -192,17 +237,19 @@ vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
 vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K]eymaps' })
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
-vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep' })
+vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 
 vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definition' } end,
 	{ desc = '[G]oto [D]efinition' })
 vim.keymap.set('n', 'grD', function() MiniExtra.pickers.lsp { scope = 'declaration' } end,
 	{ desc = '[G]oto [D]eclaration' })
+vim.keymap.set('n', 'gri', function() MiniExtra.pickers.lsp { scope = 'implementation' } end, { desc = '[G]oto [I]mplementation' })
 vim.keymap.set('n', 'grr', function()
 	MiniExtra.pickers.lsp { scope = 'references' }
 end, { desc = '[G]oto [R]eferences' })
-
+vim.keymap.set('n', 'grt', function() MiniExtra.pickers.lsp { scope='type_definition' } end, { desc = '[G]oto [T]ype Definition' })
+vim.keymap.set('n', 'gO', function() MiniExtra.pickers.lsp { scope='document_symbol' } end, { desc = '[G]oto D[o]cument Symbol' })
 vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
