@@ -18,8 +18,10 @@ vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.o.inccommand = 'split'
 vim.o.confirm = true
+vim.opt.termguicolors = true
 require('vim._core.ui2').enable({})
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
+vim.o.cursorline = is_windows
 
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
@@ -187,8 +189,8 @@ MiniPick.registry.pack_list = function()
 			items = vim.pack.get(),
 			show = function(buf_id, items)
 				local lines = {}
-				for _, item in ipairs(items) do
-					table.insert(lines, string.format("%s(%s)", item.spec.name, item.spec.src))
+				for i, item in ipairs(items) do
+					table.insert(lines, string.format("%s. %s(%s)",i, item.spec.name, item.spec.src))
 				end
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 			end,
