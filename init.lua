@@ -143,6 +143,55 @@ for _, server in ipairs(servers) do
 	vim.lsp.enable(server)
 end
 
+vim.lsp.config.angularls = {
+	cmd = {
+		'ngserver',
+		'--stdio',
+		'--tsProbeLocations',
+		string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
+		'--ngProbeLocations',
+		string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
+	},
+	on_attach = function(_, bufnr)
+		if not string.find(vim.fn.expand '%t', '.component.') then
+			return
+		end
+		local map = function(keys, func, desc, mode, silent)
+			mode = mode or 'n'
+			silent = silent or false
+			desc = desc or 'No Description Set'
+			vim.keymap.set(mode, keys, func, { buffer = bufnr, desc = 'Angular: ' .. desc, silent = silent })
+		end
+		local has_template = vim.fn.filereadable(vim.fn.expand '%<' .. '.html')
+		local has_scss = vim.fn.filereadable(vim.fn.expand '%<' .. '.scss')
+		if vim.fn.expand '%' ~= vim.fn.expand '%<.html' then
+			-- Goto Template Code
+			if has_template == 1 then
+				map('grsh', '<CMD>e %<.html <CR>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
+				map('grssh', '<CMD>vsplit %<.html <CR>', '[G]oto [A]ngular [S]plit Template ([H]TML)',
+					nil, true)
+			end
+		end
+
+		if vim.fn.expand '%' ~= vim.fn.expand '%<' .. '.ts' then
+			-- Goto Component Code
+
+			map('grst', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
+			map('grsst', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil,
+				true)
+		end
+
+		if vim.fn.expand '%' ~= vim.fn.expand '%<.scss' then
+			-- Goto SCSS
+			if has_scss == 1 then
+				map('grsc', '<CMD>e %<.scss <CR>', '[G]oto [A]ngular S[C]SS', nil, true)
+				map('grssc', '<CMD>vsplit %<.scss <CR>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
+			end
+		end
+	end
+
+}
+
 require('conform').setup({
 	notify_on_error = false,
 	format_on_save = function(bufnr)
@@ -190,7 +239,7 @@ MiniPick.registry.pack_list = function()
 			show = function(buf_id, items)
 				local lines = {}
 				for i, item in ipairs(items) do
-					table.insert(lines, string.format("%s. %s(%s)",i, item.spec.name, item.spec.src))
+					table.insert(lines, string.format("%s. %s(%s)", i, item.spec.name, item.spec.src))
 				end
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 			end,
