@@ -156,6 +156,15 @@ vim.lsp.config.angularls = {
 		if not string.find(vim.fn.expand '%t', '.component.') then
 			return
 		end
+		table.insert(MiniClue.config.clues, { mode = 'n', keys = 'grs', desc = '[S]pecial Angular Actions' })
+		table.insert(MiniClue.config.clues,
+			{ mode = 'n', keys = 'grss', desc = '[S]pecial [S]plitscreen Angular Actions' })
+		-- miniclue.setup({
+		-- 	clues = {
+		-- 		{ mode = 'n', keys = 'grs',  desc = '[S]pecial Angular Actions' },
+		-- 		{ mode = 'n', keys = 'grss', desc = '[S]pecial [S]plitscreen Angular Actions' },
+		-- 	}
+		-- })
 		local map = function(keys, func, desc, mode, silent)
 			mode = mode or 'n'
 			silent = silent or false
@@ -164,11 +173,11 @@ vim.lsp.config.angularls = {
 		end
 		local has_template = vim.fn.filereadable(vim.fn.expand '%<' .. '.html')
 		local has_scss = vim.fn.filereadable(vim.fn.expand '%<' .. '.scss')
-		if vim.fn.expand '%' ~= vim.fn.expand '%<.html' then
+		if vim.fn.expand '%' ~= vim.fn.expand '%<' .. '.html' then
 			-- Goto Template Code
 			if has_template == 1 then
-				map('grsh', '<CMD>e %<.html <CR>', '[G]oto [A]ngular Template ([H]TML)', nil, true)
-				map('grssh', '<CMD>vsplit %<.html <CR>', '[G]oto [A]ngular [S]plit Template ([H]TML)',
+				map('grsh', '<CMD>e %<.html <CR>', 'Open [H]TML Template', nil, true)
+				map('grssh', '<CMD>vsplit %<.html <CR>', 'Open Component [H]TML Template File',
 					nil, true)
 			end
 		end
@@ -176,19 +185,21 @@ vim.lsp.config.angularls = {
 		if vim.fn.expand '%' ~= vim.fn.expand '%<' .. '.ts' then
 			-- Goto Component Code
 
-			map('grst', '<CMD>e %<.ts <CR>', '[G]oto [A]ngular Component ([T]ypeScript)', nil, true)
-			map('grsst', '<CMD>vsplit %<.ts <CR>', '[G]oto [A]ngular [S]plit Component ([T]ypeScript)', nil,
+			map('grst', '<CMD>e %<.ts <CR>', 'Open [T]ypeScript Component File', nil, true)
+			map('grsst', '<CMD>vsplit %<.ts <CR>', 'Open [T]ypeScript Component File', nil,
 				true)
 		end
 
-		if vim.fn.expand '%' ~= vim.fn.expand '%<.scss' then
+		if vim.fn.expand '%' ~= vim.fn.expand '%<' .. '.scss' then
 			-- Goto SCSS
 			if has_scss == 1 then
-				map('grsc', '<CMD>e %<.scss <CR>', '[G]oto [A]ngular S[C]SS', nil, true)
-				map('grssc', '<CMD>vsplit %<.scss <CR>', '[G]oto [A]ngular [S]plit S[C]SS', nil, true)
+				map('grsc', '<CMD>e %<.scss <CR>', 'Open Component S[C]SS file', nil, true)
+				map('grssc', '<CMD>vsplit %<.scss <CR>', 'Open Component S[C]SS file', nil, true)
 			end
 		end
-	end
+	end,
+
+	filetypes = { 'typescript', 'html', 'typescriptreact', 'htmlangular', 'scss', 'css' },
 
 }
 
@@ -244,19 +255,20 @@ MiniPick.registry.pack_list = function()
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 			end,
 			choose = function(item)
-				local choice = vim.fn.confirm('Perform what action?',
+				local choice = vim.fn.confirm(
+					string.format('Perform what action on %s?', item.spec.name),
 					'&Update\n&Remove\n&Goto Source\n&Cancel', 4)
 				if choice == 1 then
 					vim.pack.update({ item.spec.name })
 				elseif choice == 2 then
 					vim.pack.del({ item.spec.name })
+				elseif choice == 3 then
+					vim.ui.open(item.spec.src)
 				elseif choice == 4 then
 					vim.schedule(function()
 						MiniPick.builtin.resume()
 					end
 					)
-				elseif choice == 3 then
-					vim.ui.open(item.spec.src)
 				end
 			end
 		}
@@ -271,28 +283,35 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 	end,
 })
 
+--Package Manager Keys
 vim.keymap.set('n', '<leader>pc', pack_clean, { desc = '[P]lugin [C]leanup' })
 vim.keymap.set('n', '<leader>pu', vim.pack.update, { desc = '[P]lugin [U]pdate' })
 vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, { desc = '[P]lugin [L]ist' })
 
-vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
-vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
+
+--Diagnostic Keys
 vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Open [D]iagnostic [Q]uickfix List' })
 vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = 'Open [D]iagnostic [F]loating Window' })
+
+--Terminal Keys
 vim.keymap.set('n', '<leader>t', '<CMD> split | term<CR>i', { desc = 'Open [T]erminal' })
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+
+--Window Movement Keys
 vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
 vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
 
+--Search Keys
 vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K]eymaps' })
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 
+--LSP keys
 vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definition' } end,
 	{ desc = '[G]oto [D]efinition' })
 vim.keymap.set('n', 'grD', function() MiniExtra.pickers.lsp { scope = 'declaration' } end,
@@ -306,9 +325,15 @@ vim.keymap.set('n', 'grt', function() MiniExtra.pickers.lsp { scope = 'type_defi
 	{ desc = '[G]oto [T]ype Definition' })
 vim.keymap.set('n', 'gO', function() MiniExtra.pickers.lsp { scope = 'document_symbol' } end,
 	{ desc = '[G]oto D[o]cument Symbol' })
+MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
+MiniClue.set_mapping_desc('n', 'grn', '[G]oto [R]ename')
+MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
+
+--Misc. Keys
 vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
 	{ desc = '[F]ormat' })
-
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
+vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
+vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
