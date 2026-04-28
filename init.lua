@@ -22,7 +22,6 @@ vim.opt.termguicolors = true
 require('vim._core.ui2').enable({})
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
 vim.o.cursorline = is_windows
-
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
 	--for example, ts_ls needs typescript-language-server installed, which is done with
@@ -46,7 +45,9 @@ if not is_windows then
 else
 	vim.pack.add { { src = 'https://github.com/f-person/auto-dark-mode.nvim' } }
 	vim.cmd.colorscheme 'catppuccin'
-	require('auto-dark-mode').setup()
+	require('auto-dark-mode').setup({
+		update_interval = 1000
+	})
 	vim.opt.shell = 'pwsh -nologo'
 end
 require('mini.extra').setup()
@@ -159,12 +160,6 @@ vim.lsp.config.angularls = {
 		table.insert(MiniClue.config.clues, { mode = 'n', keys = 'grs', desc = '[S]pecial Angular Actions' })
 		table.insert(MiniClue.config.clues,
 			{ mode = 'n', keys = 'grss', desc = '[S]pecial [S]plitscreen Angular Actions' })
-		-- miniclue.setup({
-		-- 	clues = {
-		-- 		{ mode = 'n', keys = 'grs',  desc = '[S]pecial Angular Actions' },
-		-- 		{ mode = 'n', keys = 'grss', desc = '[S]pecial [S]plitscreen Angular Actions' },
-		-- 	}
-		-- })
 		local map = function(keys, func, desc, mode, silent)
 			mode = mode or 'n'
 			silent = silent or false
@@ -292,6 +287,19 @@ vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, { desc = '[P]lugi
 --Diagnostic Keys
 vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Open [D]iagnostic [Q]uickfix List' })
 vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = 'Open [D]iagnostic [F]loating Window' })
+vim.diagnostic.config {
+	severity_sort = true,
+	float = { border = 'rounded', source = 'if_many' },
+	underline = { severity = vim.diagnostic.severity.ERROR },
+	signs = vim.g.have_nerd_font and {
+		text = {
+			[vim.diagnostic.severity.ERROR] = '󰅚 ',
+			[vim.diagnostic.severity.WARN] = '󰀪 ',
+			[vim.diagnostic.severity.INFO] = '󰋽 ',
+			[vim.diagnostic.severity.HINT] = '󰌶 ',
+		},
+	} or {},
+}
 
 --Terminal Keys
 vim.keymap.set('n', '<leader>t', '<CMD> split | term<CR>i', { desc = 'Open [T]erminal' })
