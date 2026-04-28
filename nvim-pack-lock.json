@@ -5,11 +5,15 @@
       "src": "https://github.com/f-person/auto-dark-mode.nvim"
     },
     "blink.cmp": {
-      "rev": "90d14caca4ae557665ab105080c27d5f289a2e30",
+      "rev": "b381784f40b07347baeb8707d26d5ed270b9c232",
       "src": "https://github.com/saghen/blink.cmp"
     },
+    "blink.lib": {
+      "rev": "dda2666685a5ac3598166577d2e34f1fff6b1637",
+      "src": "https://github.com/saghen/blink.lib"
+    },
     "conform.nvim": {
-      "rev": "086a40dc7ed8242c03be9f47fbcee68699cc2395",
+      "rev": "dca1a190aa85f9065979ef35802fb77131911106",
       "src": "https://github.com/stevearc/conform.nvim"
     },
     "gitsigns.nvim": {
@@ -25,11 +29,11 @@
       "src": "https://github.com/folke/lazydev.nvim"
     },
     "mini.nvim": {
-      "rev": "5849ef04c32a6a8e55957b946c0a275801d87530",
+      "rev": "be81509b7160aa02264a59789164a2e1c4a6750a",
       "src": "https://github.com/nvim-mini/mini.nvim"
     },
     "nvim-lspconfig": {
-      "rev": "e146efacbafed3789ac568abcc5a981c5decaa58",
+      "rev": "bf5abe69c1874531f359a822d0cff4d73e26113f",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "oil.nvim": {

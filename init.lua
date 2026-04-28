@@ -33,6 +33,7 @@ vim.pack.add {
 	{ src = 'https://github.com/stevearc/oil.nvim' },
 	--when updating, need to cd ~/.local/share/nvim/site/pack/core/opt/blink.cmp, and then cargo build --release
 	--don't need to do that when the force_version is set like I have it now in the setup below
+	{ src = 'https://github.com/saghen/blink.lib' },
 	{ src = 'https://github.com/saghen/blink.cmp' },
 	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
@@ -96,6 +97,7 @@ miniclue.setup({
 		{ mode = 'n', keys = '<leader>s', desc = '[S]earch' },
 		{ mode = 'n', keys = '<leader>p', desc = '[P]lugin' },
 		{ mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
+		{ mode = 'n', keys = '<leader>g', desc = '[G]it' },
 		miniclue.gen_clues.square_brackets(),
 		miniclue.gen_clues.builtin_completion(),
 		miniclue.gen_clues.g(),
@@ -114,9 +116,11 @@ end
 
 require('mini.ai').setup { nlines = 500 }
 require('mini.icons').setup()
-require('oil').setup { view_options = { show_hidden = true } }
+require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "sie", 'mtime' } }
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
-require('blink.cmp').setup { fuzzy = { implementation = 'prefer_rust', prebuilt_binaries = { force_version = 'v*' } }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
+local cmp = require('blink.cmp')
+cmp.build():vailt(60000)
+cmp.setup { fuzzy = { implementation = 'prefer_rust' }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
 	default = { "lazydev", "lsp", "path", "snippets", "buffer" },
 	providers = {
 		lazydev = {
@@ -318,6 +322,11 @@ vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
+vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
+
+--Git Keys
+vim.keymap.set('n', '<leader>gB', '<CMD>Gitsigns blame<CR>', { desc = '[G]it [B]lame File' })
+vim.keymap.set('n', '<leader>gb', '<CMD>Gitsigns blame_line<CR>', { desc = '[G]it [B]lame Line' })
 
 --LSP keys
 vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definition' } end,
@@ -338,7 +347,6 @@ MiniClue.set_mapping_desc('n', 'grn', '[G]oto [R]ename')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
 
 --Misc. Keys
-vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
 	{ desc = '[F]ormat' })
