@@ -31,8 +31,6 @@ vim.pack.add {
 	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/stevearc/oil.nvim' },
-	--when updating, need to cd ~/.local/share/nvim/site/pack/core/opt/blink.cmp, and then cargo build --release
-	--don't need to do that when the force_version is set like I have it now in the setup below
 	{ src = 'https://github.com/saghen/blink.lib' },
 	{ src = 'https://github.com/saghen/blink.cmp' },
 	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
@@ -86,6 +84,9 @@ miniclue.setup({
 
 		-- `z` key
 		{ mode = { 'n', 'x' }, keys = 'z' },
+
+		-- `s` key
+		{ mode = 'n',          keys = 's' }
 	},
 	window = {
 		delay = 0,
@@ -116,10 +117,21 @@ end
 
 require('mini.ai').setup { nlines = 500 }
 require('mini.icons').setup()
-require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "sie", 'mtime' } }
+require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
+vim.api.nvim_create_autocmd("User", {
+	pattern = "OilEnter",
+	callback = function() require("mini.clue").ensure_buf_triggers() end,
+})
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 local cmp = require('blink.cmp')
-cmp.build():vailt(60000)
+--NOTE: for some reason, the default way rust builds on Windows messes with this. What you have to do instead, for Windows, is:
+-- 1. cd C:\Users\8eber\AppData\Local\nvim-data\site\pack\core\opt\blink.cmp
+-- cargo build --release
+-- cd C:\Users\8eber\AppData\Local\nvim-data\site\pack\core\opt\blink.cmp\target\release
+-- rename blink_cmp_fuzzy.dll to libblink_cmp_fuzzy.dll
+-- NOTE: msvc is needed in Windows to build this, specifically the MSVC Build Tools for x64/x86 (Latest) from the Visual Studio Installer -> Individual Components
+-- DOUBLE NOTE: Turns out, maybe don't need to go through all this. Once I downloaded the MSVC Build Tools and the Windows 11 SDK, .build() works
+cmp.build():wait(60000)
 cmp.setup { fuzzy = { implementation = 'prefer_rust' }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
 	default = { "lazydev", "lsp", "path", "snippets", "buffer" },
 	providers = {
