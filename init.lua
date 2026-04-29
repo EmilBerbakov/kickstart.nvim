@@ -123,7 +123,7 @@ vim.api.nvim_create_autocmd("User", {
 })
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 
-require('blink.cmp').setup { fuzzy = { implementation = 'lua', prebuilt_binaries = { force_version = 'v*' } }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
+require('blink.cmp').setup { fuzzy = { implementation = 'prefer_rust', prebuilt_binaries = { force_version = 'v*' } }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
 
 
 	default = { "lazydev", "lsp", "path", "snippets", "buffer" },
