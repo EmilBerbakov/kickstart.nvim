@@ -154,7 +154,7 @@ require('gitsigns').setup {
 }
 
 
-local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls' }
+local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls', 'cssls', 'pyright' }
 
 for _, server in ipairs(servers) do
 	vim.lsp.enable(server)
