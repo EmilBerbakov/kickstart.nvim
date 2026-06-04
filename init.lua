@@ -355,7 +355,7 @@ vim.keymap.set('n', 'grt', function() MiniExtra.pickers.lsp { scope = 'type_defi
 vim.keymap.set('n', 'gO', function() MiniExtra.pickers.lsp { scope = 'document_symbol' } end,
 	{ desc = '[G]oto D[o]cument Symbol' })
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
-MiniClue.set_mapping_desc('n', 'grn', '[G]oto [R]ename')
+MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
 
 --Misc. Keys
