@@ -31,7 +31,7 @@ vim.pack.add {
 	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/stevearc/oil.nvim' },
-	{ src = 'https://github.com/saghen/blink.cmp',         version = vim.version.range('^1') },
+	-- { src = 'https://github.com/saghen/blink.cmp',         version = vim.version.range('^1') },
 	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
@@ -52,6 +52,7 @@ require('mini.extra').setup()
 require('mini.pick').setup()
 require('mini.pairs').setup()
 require('mini.surround').setup()
+require('mini.notify').setup()
 require('guess-indent').setup({})
 local miniclue = require('mini.clue')
 miniclue.setup({
@@ -123,19 +124,49 @@ vim.api.nvim_create_autocmd("User", {
 })
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 
-require('blink.cmp').setup { fuzzy = { implementation = 'prefer_rust', prebuilt_binaries = { force_version = 'v*' } }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
+require('mini.completion').setup()
+local mini_snippets = require('mini.snippets')
+mini_snippets.setup({
+	snippets = {
+		mini_snippets.gen_loader.from_lang()
+	}
+})
+mini_snippets.start_lsp_server({ match = false })
 
-
-	default = { "lazydev", "lsp", "path", "snippets", "buffer" },
-	providers = {
-		lazydev = {
-			name = "LazyDev",
-			module = "lazydev.integrations.blink",
-			-- make lazydev completions top priority (see `:h blink.cmp`)
-			score_offset = 100,
-		},
-	},
-} }
+-- require('blink.cmp').setup {
+-- 	fuzzy = { implementation = 'prefer_rust', prebuilt_binaries = { force_version = 'v*' } },
+-- 	completion = { documentation = { auto_show = false } },
+-- 	sources = {
+--
+--
+-- 		default = { "lazydev", "lsp", "path", "snippets", "buffer" },
+-- 		providers = {
+-- 			lazydev = {
+-- 				name = "LazyDev",
+-- 				module = "lazydev.integrations.blink",
+-- 				-- make lazydev completions top priority (see `:h blink.cmp`)
+-- 				score_offset = 100,
+-- 			},
+-- 		},
+--
+-- 	},
+-- 	signature = {
+-- 		enabled = true,
+-- 		trigger = {
+-- 			show_on_trigger_character = false,
+-- 			show_on_insert_on_trigger_character = false,
+-- 		},
+-- 		window = {
+-- 			show_documentation = true
+-- 		}
+-- 	},
+--
+-- 	keymap = {
+-- 		preset = 'default'
+-- 	},
+--
+-- }
+-- vim.api.nvim_set_hl(0, 'BlinkCmpSignatureHelpActiveParameter', { bold = true, underline = true })
 
 require('gitsigns').setup {
 	signs = {
@@ -208,6 +239,15 @@ vim.lsp.config.angularls = {
 
 }
 
+vim.lsp.config.csharp_ls = {
+	on_attach = function(_, bufnr)
+		vim.opt_local.foldlevel = 99
+		vim.opt_local.foldmethod = "expr"
+		vim.opt_local.foldexpr = "v:lua.vim.lsp.foldexpr()"
+		vim.opt_local.foldtext = "v:lua.vim.lsp.foldtext()"
+	end
+}
+
 require('conform').setup({
 	notify_on_error = false,
 	format_on_save = function(bufnr)
@@ -220,7 +260,17 @@ require('conform').setup({
 				lsp_format = 'fallback'
 			}
 		end
-	end
+	end,
+	-- formatters_by_ft = {
+	-- 	cs = { 'dotnet_format' }
+	-- },
+	-- formatters = {
+	-- 	dotnet_format = {
+	-- 		command = "dotnet",
+	-- 		args = { "format", "--stdin-filename", "${INPUT}", "--include", "${INPUT}" },
+	-- 		stdin = true
+	-- 	}
+	-- }
 })
 
 local function pack_clean()
@@ -350,7 +400,7 @@ vim.keymap.set('n', 'gO', function() MiniExtra.pickers.lsp { scope = 'document_s
 	{ desc = '[G]oto D[o]cument Symbol' })
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
-MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
+MiniClue.set_mapping_desc('n', 'grx', 'E[x]ecute Code Under Cursor')
 
 --Misc. Keys
 vim.keymap.set('n', '<leader>f',
@@ -359,3 +409,7 @@ vim.keymap.set('n', '<leader>f',
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
 vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
+vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center cursor on screen' })
+vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
+vim.keymap.set('v', '<', '<gv')
+vim.keymap.set('v', '>', '>gv')
