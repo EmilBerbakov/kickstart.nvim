@@ -18,41 +18,103 @@ vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.o.inccommand = 'split'
 vim.o.confirm = true
-vim.opt.termguicolors = true
 require('vim._core.ui2').enable({})
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
-vim.o.cursorline = is_windows
+vim.o.cursorline = true
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
 	--for example, ts_ls needs typescript-language-server installed, which is done with
 	-- ``` npm install -g typescript-language-server typescript ```
 	-- For Windows, this path is %localappdata%\nvim-data\site\pack\core\opt\nvim-lspconfig\lsp
+	--TODO: - testing
 	{ src = 'https://github.com/neovim/nvim-lspconfig' },
 	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/stevearc/oil.nvim' },
-	{ src = 'https://github.com/saghen/blink.lib' },
-	{ src = 'https://github.com/saghen/blink.cmp' },
 	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
 }
-if not is_windows then
-	vim.pack.add { { src = 'https://github.com/shaunsingh/nord.nvim' } }
-	vim.g.nord_disable_background = true
-	vim.cmd.colorscheme 'nord'
-else
-	vim.pack.add { { src = 'https://github.com/f-person/auto-dark-mode.nvim' } }
-	vim.cmd.colorscheme 'catppuccin'
-	require('auto-dark-mode').setup({
-		update_interval = 1000
-	})
+vim.pack.add { { src = 'https://github.com/f-person/auto-dark-mode.nvim' } }
+require('auto-dark-mode').setup({
+	update_interval = 1000,
+	-- only needed if termguicolors is false
+	-- set_dark_mode = function()
+	-- 	vim.api.nvim_set_hl(0, "NormalFloat", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
+	-- 	vim.api.nvim_set_hl(0, "Pmenu", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
+	-- 	vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 235 })
+	-- 	vim.api.nvim_set_hl(0, 'Comment', { ctermfg = 14, italic = true })
+	-- end,
+	--
+	-- set_light_mode = function()
+	-- 	vim.api.nvim_set_hl(0, "NormalFloat", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
+	-- 	vim.api.nvim_set_hl(0, "Pmenu", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
+	-- 	vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 255 })
+	-- 	vim.api.nvim_set_hl(0, 'Comment', { ctermfg = 14, italic = true })
+	-- end
+})
+
+if is_windows then
 	vim.opt.shell = 'pwsh -nologo'
+
+	_G.reload_theme = function()
+		local f = io.open(vim.fn.expand('~/AppData/Local/nvim/lua/generated_colors.lua'), 'r')
+		if not f then
+			vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
+			return
+		end
+		local tab = f:read('*a')
+		f:close()
+
+		local load_tab, err = load(tab)
+		if err then
+			vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
+			return
+		end
+		if load_tab then
+			local ok, new_palette = pcall(load_tab)
+			if ok and type(new_palette) == 'table' then
+				require('mini.base16').setup({ palette = new_palette })
+			end
+		end
+	end
+
+	-- Fallback check on startup if file loading fails
+	package.loaded['generated_colors'] = nil
+	local ok, new_palette = pcall(require, 'generated_colors')
+	if ok then
+		require('mini.base16').setup({ palette = new_palette })
+	end
+
+	_G.reload_theme()
+
+	_G.watcher = vim.uv.new_fs_event()
+	local path = vim.fn.expand('~/AppData/Local/nvim/lua')
+	local is_reloading = false
+
+	if _G.watcher then
+		_G.watcher:start(path, {}, vim.schedule_wrap(function(err, filename, _)
+			if err or not filename then
+				vim.notify('Failed to initialize Matugen Theme File Watcher.', vim.log.levels.ERROR)
+				return
+			end
+			if filename == 'generated_colors.lua' and not is_reloading then
+				is_reloading = true
+				vim.defer_fn(function()
+					_G.reload_theme()
+					is_reloading = false
+				end, 50)
+			end
+		end))
+	else
+		vim.notify('Failed to initialize file watcher', vim.log.levels.ERROR)
+	end
 end
 require('mini.extra').setup()
 require('mini.pick').setup()
 require('mini.pairs').setup()
 require('mini.surround').setup()
+require('mini.notify').setup()
 require('guess-indent').setup({})
 local miniclue = require('mini.clue')
 miniclue.setup({
@@ -117,32 +179,13 @@ end
 
 require('mini.ai').setup { nlines = 500 }
 require('mini.icons').setup()
+require('mini.completion').setup()
 require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
 vim.api.nvim_create_autocmd("User", {
 	pattern = "OilEnter",
 	callback = function() require("mini.clue").ensure_buf_triggers() end,
 })
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
-local cmp = require('blink.cmp')
---NOTE: for some reason, the default way rust builds on Windows messes with this. What you have to do instead, for Windows, is:
--- 1. cd C:\Users\8eber\AppData\Local\nvim-data\site\pack\core\opt\blink.cmp
--- cargo build --release
--- cd C:\Users\8eber\AppData\Local\nvim-data\site\pack\core\opt\blink.cmp\target\release
--- rename blink_cmp_fuzzy.dll to libblink_cmp_fuzzy.dll
--- NOTE: msvc is needed in Windows to build this, specifically the MSVC Build Tools for x64/x86 (Latest) from the Visual Studio Installer -> Individual Components
--- DOUBLE NOTE: Turns out, maybe don't need to go through all this. Once I downloaded the MSVC Build Tools and the Windows 11 SDK, .build() works
-cmp.build():wait(60000)
-cmp.setup { fuzzy = { implementation = 'prefer_rust' }, completion = { documentation = { auto_show = false, auto_show_delay_ms = 500 } }, sources = {
-	default = { "lazydev", "lsp", "path", "snippets", "buffer" },
-	providers = {
-		lazydev = {
-			name = "LazyDev",
-			module = "lazydev.integrations.blink",
-			-- make lazydev completions top priority (see `:h blink.cmp`)
-			score_offset = 100,
-		},
-	},
-} }
 require('gitsigns').setup {
 	signs = {
 		add = { text = '+' },
@@ -365,3 +408,5 @@ vim.keymap.set('n', '<leader>f',
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
 vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
+vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
+vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
