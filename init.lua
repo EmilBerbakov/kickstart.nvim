@@ -30,7 +30,7 @@ vim.pack.add {
 	{ src = 'https://github.com/neovim/nvim-lspconfig' },
 	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
-	{ src = 'https://github.com/stevearc/oil.nvim' },
+	-- { src = 'https://github.com/stevearc/oil.nvim' },
 	-- { src = 'https://github.com/saghen/blink.cmp',         version = vim.version.range('^1') },
 	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
@@ -117,11 +117,31 @@ end
 
 require('mini.ai').setup { nlines = 500 }
 require('mini.icons').setup()
-require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
-vim.api.nvim_create_autocmd("User", {
-	pattern = "OilEnter",
-	callback = function() require("mini.clue").ensure_buf_triggers() end,
+require('mini.files').setup({
+	windows = {
+		max_number = 1,
+	},
+	mappings = {
+		go_in = 'L',
+		go_in_plus = 'l',
+		go_out = 'H',
+		go_out_plus = 'h'
+	}
 })
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'MiniFilesWindowUpdate',
+	callback = function(args)
+		vim.wo[args.data.win_id].relativenumber = true
+		vim.wo[args.data.win_id].number = true
+	end
+})
+
+-- require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
+-- vim.api.nvim_create_autocmd("User", {
+-- 	pattern = "OilEnter",
+-- 	callback = function() require("mini.clue").ensure_buf_triggers() end,
+-- })
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 
 require('mini.completion').setup()
@@ -379,6 +399,7 @@ vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]i
 vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
+vim.keymap.set('n', '<leader>sn', MiniNotify.show_history, { desc = '[S]earch [N]otification History' })
 
 --Git Keys
 vim.keymap.set('n', '<leader>gB', '<CMD>Gitsigns blame<CR>', { desc = '[G]it [B]lame File' })
@@ -408,7 +429,8 @@ vim.keymap.set('n', '<leader>f',
 	{ desc = '[F]ormat' })
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
-vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
+-- vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
+vim.keymap.set('n', '-', '<cmd>lua MiniFiles.open()<cr>', { desc = 'open parent directory' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center cursor on screen' })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv')
