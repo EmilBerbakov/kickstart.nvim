@@ -30,7 +30,7 @@ vim.pack.add {
 	{ src = 'https://github.com/neovim/nvim-lspconfig' },
 	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
-	{ src = 'https://github.com/stevearc/oil.nvim' },
+	-- { src = 'https://github.com/stevearc/oil.nvim' },
 	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
@@ -180,11 +180,32 @@ end
 require('mini.ai').setup { nlines = 500 }
 require('mini.icons').setup()
 require('mini.completion').setup()
-require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
-vim.api.nvim_create_autocmd("User", {
-	pattern = "OilEnter",
-	callback = function() require("mini.clue").ensure_buf_triggers() end,
+-- require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
+-- vim.api.nvim_create_autocmd("User", {
+-- 	pattern = "OilEnter",
+-- 	callback = function() require("mini.clue").ensure_buf_triggers() end,
+-- })
+require('mini.files').setup({
+	mappings = {
+		go_in = 'L',
+		go_in_plus = 'l',
+		go_out = 'H',
+		go_out_plus = 'h'
+	},
+	windows = {
+		max_number = 1
+	}
 })
+
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'MiniFilesWindowUpdate',
+	callback = function(args)
+		vim.wo[args.data.win_id].relativenumber = true
+		vim.wo[args.data.win_id].number = true
+	end
+})
+
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 require('gitsigns').setup {
 	signs = {
@@ -407,6 +428,7 @@ vim.keymap.set('n', '<leader>f',
 	{ desc = '[F]ormat' })
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
-vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
+-- vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
+vim.keymap.set('n', '-', MiniFiles.open, { desc = 'open parent directory' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
 vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
