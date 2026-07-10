@@ -4,4 +4,4 @@ test.sh
 nvim
 
 spell/
-./lua/generated_colors.lua
+lua/generated_colors.lua

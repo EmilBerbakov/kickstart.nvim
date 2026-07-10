@@ -15,6 +15,7 @@ vim.o.smartcase = true
 vim.o.splitright = true
 vim.o.splitbelow = true
 vim.o.list = true
+-- vim.o.termguicolors = false
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.o.inccommand = 'split'
 vim.o.confirm = true
@@ -30,28 +31,33 @@ vim.pack.add {
 	{ src = 'https://github.com/neovim/nvim-lspconfig' },
 	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
-	-- { src = 'https://github.com/stevearc/oil.nvim' },
-	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
 }
 vim.pack.add { { src = 'https://github.com/f-person/auto-dark-mode.nvim' } }
 require('auto-dark-mode').setup({
 	update_interval = 1000,
-	-- only needed if termguicolors is false
-	-- set_dark_mode = function()
-	-- 	vim.api.nvim_set_hl(0, "NormalFloat", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
-	-- 	vim.api.nvim_set_hl(0, "Pmenu", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
-	-- 	vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 235 })
-	-- 	vim.api.nvim_set_hl(0, 'Comment', { ctermfg = 14, italic = true })
-	-- end,
-	--
-	-- set_light_mode = function()
-	-- 	vim.api.nvim_set_hl(0, "NormalFloat", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
-	-- 	vim.api.nvim_set_hl(0, "Pmenu", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
-	-- 	vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 255 })
-	-- 	vim.api.nvim_set_hl(0, 'Comment', { ctermfg = 14, italic = true })
-	-- end
+	set_dark_mode = function()
+		if vim.o.termguicolors == false
+		then
+			return
+		end
+		vim.api.nvim_set_hl(0, "NormalFloat", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
+		vim.api.nvim_set_hl(0, "Pmenu", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
+		vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 235 })
+		vim.api.nvim_set_hl(0, 'Comment', { ctermfg = 14, italic = true })
+	end,
+
+	set_light_mode = function()
+		if vim.o.termguicolors == false
+		then
+			return
+		end
+		vim.api.nvim_set_hl(0, "NormalFloat", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
+		vim.api.nvim_set_hl(0, "Pmenu", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
+		vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 255 })
+		vim.api.nvim_set_hl(0, 'Comment', { ctermfg = 14, italic = true })
+	end
 })
 
 if is_windows then
@@ -180,11 +186,6 @@ end
 require('mini.ai').setup { nlines = 500 }
 require('mini.icons').setup()
 require('mini.completion').setup()
--- require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
--- vim.api.nvim_create_autocmd("User", {
--- 	pattern = "OilEnter",
--- 	callback = function() require("mini.clue").ensure_buf_triggers() end,
--- })
 require('mini.files').setup({
 	mappings = {
 		go_in = 'L',
@@ -195,6 +196,10 @@ require('mini.files').setup({
 	windows = {
 		max_number = 1
 	}
+})
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'MiniFilesWindowOpen',
+	callback = function() require('mini.clue').enable_buf_triggers() end
 })
 
 
@@ -207,15 +212,8 @@ vim.api.nvim_create_autocmd('User', {
 })
 
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
-require('gitsigns').setup {
-	signs = {
-		add = { text = '+' },
-		change = { text = '~' },
-		delete = { text = '_' },
-		topdelete = { text = '‾' },
-		changedelete = { text = '~' },
-	},
-}
+require('mini.git').setup()
+require('mini.diff').setup()
 
 
 local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls', 'cssls', 'pyright' }
@@ -428,7 +426,7 @@ vim.keymap.set('n', '<leader>f',
 	{ desc = '[F]ormat' })
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
--- vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
-vim.keymap.set('n', '-', MiniFiles.open, { desc = 'open parent directory' })
+local minifiles_toggle = function() if not MiniFiles.close() then MiniFiles.open() end end
+vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
 vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
