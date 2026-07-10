@@ -32,7 +32,7 @@ vim.pack.add {
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	-- { src = 'https://github.com/stevearc/oil.nvim' },
 	-- { src = 'https://github.com/saghen/blink.cmp',         version = vim.version.range('^1') },
-	{ src = 'https://github.com/lewis6991/gitsigns.nvim' },
+	-- { src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
 }
@@ -53,6 +53,55 @@ require('mini.pick').setup()
 require('mini.pairs').setup()
 require('mini.surround').setup()
 require('mini.notify').setup()
+require('mini.git').setup({
+	commands = {
+		blame = "blame --no-filename"
+	}
+})
+
+vim.api.nvim_set_hl(0, "GitBlameHashRoot", { link = "Tag" })
+vim.api.nvim_set_hl(0, "GitBlameHash", { link = "Identifier" })
+vim.api.nvim_set_hl(0, "GitBlameAuthor", { link = "String" })
+vim.api.nvim_set_hl(0, "GitBlameDate", { link = "Comment" })
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'MiniGitCommandSplit',
+	callback = function(e)
+		if e.data.git_subcommand ~= 'blame' then
+			return
+		end
+		local win_src = e.data.win_source
+		local buf = e.buf
+		local win = e.data.win_stdout
+		-- Opts
+		vim.bo[buf].modifiable = false
+		vim.wo[win].wrap = false
+		vim.wo[win].cursorline = true
+		-- View
+		vim.fn.winrestview({ topline = vim.fn.line('w0', win_src) })
+		vim.api.nvim_win_set_cursor(0, { vim.fn.line('.', win_src), 0 })
+		vim.wo[win].scrollbind, vim.wo[win_src].scrollbind = true, true
+		vim.wo[win].cursorbind, vim.wo[win_src].cursorbind = true, true
+		-- Vert width
+		if e.data.cmd_input.mods:match("vertical") then
+			local lines = vim.api.nvim_buf_get_lines(0, 1, -1, false)
+			local width = vim.iter(lines):fold(-1, function(acc, ln)
+				local stat = string.match(ln, "^%S+ %b()")
+				return math.max(acc, vim.fn.strwidth(stat))
+			end)
+			width = width + vim.fn.getwininfo(win)[1].textoff
+			vim.api.nvim_win_set_width(win, width)
+		end
+		-- Highlight
+		vim.fn.matchadd("GitBlameHashRoot", [[^^\w\+]])
+		vim.fn.matchadd("GitBlameHash", [[^\w\+]])
+		local leftmost = [[^.\{-}\zs]]
+		vim.fn.matchadd("GitBlameAuthor", leftmost .. [[(\zs.\{-} \ze\d\{4}-]])
+		vim.fn.matchadd("GitBlameDate", leftmost .. [[[0-9-]\{10} [0-9:]\{8} [+-]\d\+]])
+	end
+})
+
+require('mini.diff').setup()
 require('guess-indent').setup({})
 local miniclue = require('mini.clue')
 miniclue.setup({
@@ -137,6 +186,11 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+vim.api.nvim_create_autocmd("User", {
+	pattern = "MiniFilesWindowOpen",
+	callback = function() require("mini.clue").ensure_buf_triggers() end,
+})
+
 -- require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
 -- vim.api.nvim_create_autocmd("User", {
 -- 	pattern = "OilEnter",
@@ -188,15 +242,15 @@ mini_snippets.start_lsp_server({ match = false })
 -- }
 -- vim.api.nvim_set_hl(0, 'BlinkCmpSignatureHelpActiveParameter', { bold = true, underline = true })
 
-require('gitsigns').setup {
-	signs = {
-		add = { text = '+' },
-		change = { text = '~' },
-		delete = { text = '_' },
-		topdelete = { text = '‾' },
-		changedelete = { text = '~' },
-	},
-}
+-- require('gitsigns').setup {
+-- 	signs = {
+-- 		add = { text = '+' },
+-- 		change = { text = '~' },
+-- 		delete = { text = '_' },
+-- 		topdelete = { text = '‾' },
+-- 		changedelete = { text = '~' },
+-- 	},
+-- }
 
 
 local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls' }
@@ -260,7 +314,7 @@ vim.lsp.config.angularls = {
 }
 
 vim.lsp.config.csharp_ls = {
-	on_attach = function(_, bufnr)
+	on_attach = function()
 		vim.opt_local.foldlevel = 99
 		vim.opt_local.foldmethod = "expr"
 		vim.opt_local.foldexpr = "v:lua.vim.lsp.foldexpr()"
@@ -391,6 +445,7 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
+vim.keymap.set('n', '<esc><esc><esc>', '<cmd>tabc<cr>', { desc = 'Close tab' })
 
 --Search Keys
 vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]elp' })
@@ -402,8 +457,12 @@ vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B
 vim.keymap.set('n', '<leader>sn', MiniNotify.show_history, { desc = '[S]earch [N]otification History' })
 
 --Git Keys
-vim.keymap.set('n', '<leader>gB', '<CMD>Gitsigns blame<CR>', { desc = '[G]it [B]lame File' })
-vim.keymap.set('n', '<leader>gb', '<CMD>Gitsigns blame_line<CR>', { desc = '[G]it [B]lame Line' })
+-- vim.keymap.set('n', '<leader>gB', '<CMD>Gitsigns blame<CR>', { desc = '[G]it [B]lame File' })
+vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
+
+vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
+
+-- vim.keymap.set('n', '<leader>gb', '<CMD>Gitsigns blame_line<CR>', { desc = '[G]it [B]lame Line' })
 
 --LSP keys
 vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definition' } end,
@@ -430,7 +489,10 @@ vim.keymap.set('n', '<leader>f',
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
 -- vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
-vim.keymap.set('n', '-', '<cmd>lua MiniFiles.open()<cr>', { desc = 'open parent directory' })
+local minifiles_toggle = function()
+	if not MiniFiles.close() then MiniFiles.open() end
+end
+vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center cursor on screen' })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv')
