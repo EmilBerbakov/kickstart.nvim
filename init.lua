@@ -30,9 +30,6 @@ vim.pack.add {
 	{ src = 'https://github.com/neovim/nvim-lspconfig' },
 	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
-	-- { src = 'https://github.com/stevearc/oil.nvim' },
-	-- { src = 'https://github.com/saghen/blink.cmp',         version = vim.version.range('^1') },
-	-- { src = 'https://github.com/lewis6991/gitsigns.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
 }
@@ -174,7 +171,8 @@ require('mini.files').setup({
 		go_in = 'L',
 		go_in_plus = 'l',
 		go_out = 'H',
-		go_out_plus = 'h'
+		go_out_plus = 'h',
+		close = '<esc>'
 	}
 })
 
@@ -191,11 +189,6 @@ vim.api.nvim_create_autocmd("User", {
 	callback = function() require("mini.clue").ensure_buf_triggers() end,
 })
 
--- require('oil').setup { view_options = { show_hidden = true }, columns = { "icon", "size", 'mtime' } }
--- vim.api.nvim_create_autocmd("User", {
--- 	pattern = "OilEnter",
--- 	callback = function() require("mini.clue").ensure_buf_triggers() end,
--- })
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 
 require('mini.completion').setup()
@@ -206,52 +199,6 @@ mini_snippets.setup({
 	}
 })
 mini_snippets.start_lsp_server({ match = false })
-
--- require('blink.cmp').setup {
--- 	fuzzy = { implementation = 'prefer_rust', prebuilt_binaries = { force_version = 'v*' } },
--- 	completion = { documentation = { auto_show = false } },
--- 	sources = {
---
---
--- 		default = { "lazydev", "lsp", "path", "snippets", "buffer" },
--- 		providers = {
--- 			lazydev = {
--- 				name = "LazyDev",
--- 				module = "lazydev.integrations.blink",
--- 				-- make lazydev completions top priority (see `:h blink.cmp`)
--- 				score_offset = 100,
--- 			},
--- 		},
---
--- 	},
--- 	signature = {
--- 		enabled = true,
--- 		trigger = {
--- 			show_on_trigger_character = false,
--- 			show_on_insert_on_trigger_character = false,
--- 		},
--- 		window = {
--- 			show_documentation = true
--- 		}
--- 	},
---
--- 	keymap = {
--- 		preset = 'default'
--- 	},
---
--- }
--- vim.api.nvim_set_hl(0, 'BlinkCmpSignatureHelpActiveParameter', { bold = true, underline = true })
-
--- require('gitsigns').setup {
--- 	signs = {
--- 		add = { text = '+' },
--- 		change = { text = '~' },
--- 		delete = { text = '_' },
--- 		topdelete = { text = '‾' },
--- 		changedelete = { text = '~' },
--- 	},
--- }
-
 
 local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls' }
 
@@ -335,16 +282,6 @@ require('conform').setup({
 			}
 		end
 	end,
-	-- formatters_by_ft = {
-	-- 	cs = { 'dotnet_format' }
-	-- },
-	-- formatters = {
-	-- 	dotnet_format = {
-	-- 		command = "dotnet",
-	-- 		args = { "format", "--stdin-filename", "${INPUT}", "--include", "${INPUT}" },
-	-- 		stdin = true
-	-- 	}
-	-- }
 })
 
 local function pack_clean()
@@ -457,12 +394,9 @@ vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B
 vim.keymap.set('n', '<leader>sn', MiniNotify.show_history, { desc = '[S]earch [N]otification History' })
 
 --Git Keys
--- vim.keymap.set('n', '<leader>gB', '<CMD>Gitsigns blame<CR>', { desc = '[G]it [B]lame File' })
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
-
 vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
 
--- vim.keymap.set('n', '<leader>gb', '<CMD>Gitsigns blame_line<CR>', { desc = '[G]it [B]lame Line' })
 
 --LSP keys
 vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definition' } end,
@@ -488,9 +422,9 @@ vim.keymap.set('n', '<leader>f',
 	{ desc = '[F]ormat' })
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
--- vim.keymap.set('n', '-', '<CMD>Oil<CR>', { desc = 'open parent directory' })
 local minifiles_toggle = function()
-	if not MiniFiles.close() then MiniFiles.open() end
+	local current_file = vim.api.nvim_buf_get_name(0)
+	if not MiniFiles.close() then MiniFiles.open(current_file) end
 end
 vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center cursor on screen' })
