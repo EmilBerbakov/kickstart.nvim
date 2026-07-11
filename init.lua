@@ -167,7 +167,7 @@ miniclue.setup({
 	clues = {
 		{ mode = 'n', keys = '<leader>s', desc = '[S]earch' },
 		{ mode = 'n', keys = '<leader>p', desc = '[P]lugin' },
-		{ mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
+		-- { mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
 		{ mode = 'n', keys = '<leader>g', desc = '[G]it' },
 		miniclue.gen_clues.square_brackets(),
 		miniclue.gen_clues.builtin_completion(),
@@ -410,10 +410,6 @@ vim.keymap.set('n', '<leader>pc', pack_clean, { desc = '[P]lugin [C]leanup' })
 vim.keymap.set('n', '<leader>pu', vim.pack.update, { desc = '[P]lugin [U]pdate' })
 vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, { desc = '[P]lugin [L]ist' })
 
-
---Diagnostic Keys
-vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Open [D]iagnostic [Q]uickfix List' })
-vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = 'Open [D]iagnostic [F]loating Window' })
 vim.diagnostic.config {
 	severity_sort = true,
 	float = { border = 'rounded', source = 'if_many' },
@@ -438,6 +434,7 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
+vim.keymap.set('n', '<esc><esc><esc>', '<cmd>tabc<cr>', { desc = 'Close tab' })
 
 --Search Keys
 vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]elp' })
@@ -446,25 +443,19 @@ vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]i
 vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
+vim.keymap.set('n', '<leader>sd', MiniExtra.pickers.diagnostic, { desc = '[S]earch [D]iagnostics in all buffers' })
 
 --Git Keys
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
 vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
 
 --LSP keys
-vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definition' } end,
-	{ desc = '[G]oto [D]efinition' })
-vim.keymap.set('n', 'grD', function() MiniExtra.pickers.lsp { scope = 'declaration' } end,
-	{ desc = '[G]oto [D]eclaration' })
-vim.keymap.set('n', 'gri', function() MiniExtra.pickers.lsp { scope = 'implementation' } end,
-	{ desc = '[G]oto [I]mplementation' })
-vim.keymap.set('n', 'grr', function()
-	MiniExtra.pickers.lsp { scope = 'references' }
-end, { desc = '[G]oto [R]eferences' })
-vim.keymap.set('n', 'grt', function() MiniExtra.pickers.lsp { scope = 'type_definition' } end,
-	{ desc = '[G]oto [T]ype Definition' })
-vim.keymap.set('n', 'gO', function() MiniExtra.pickers.lsp { scope = 'document_symbol' } end,
-	{ desc = '[G]oto D[o]cument Symbol' })
+vim.keymap.set('n', 'grd', '<cmd>Pick lsp scope="definition"<cr>', { desc = '[G]oto [D]efinition' })
+vim.keymap.set('n', 'grD', '<cmd>Pick lsp scope="declaration"<cr>', { desc = '[G]oto [D]eclaration' })
+vim.keymap.set('n', 'gri', '<cmd>Pick lsp scope="implementation"<cr>', { desc = '[G]oto [I]mplementation' })
+vim.keymap.set('n', 'grr', '<cmd>Pick lsp scope="references"<cr>', { desc = '[G]oto [R]eferences' })
+vim.keymap.set('n', 'grt', '<cmd>Pick lsp scope="type_definition"<cr>', { desc = '[G]oto [T]ype Definition' })
+vim.keymap.set('n', 'gO', '<cmd>Pick lsp scope="document_symbol"<cr>', { desc = '[G]oto D[o]cument Symbol' })
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
@@ -480,5 +471,7 @@ local minifiles_toggle = function()
 	if not MiniFiles.close() then MiniFiles.open(current_file) end
 end
 vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
+vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center cursor on screen' })
+vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
 vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
