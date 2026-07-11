@@ -15,6 +15,8 @@ vim.o.smartcase = true
 vim.o.splitright = true
 vim.o.splitbelow = true
 vim.o.list = true
+vim.g.loaded_netrwPlugin = 1
+vim.g.loaded_netrw = 1
 -- vim.o.termguicolors = false
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.o.inccommand = 'split'
@@ -191,11 +193,12 @@ require('mini.files').setup({
 		go_in = 'L',
 		go_in_plus = 'l',
 		go_out = 'H',
-		go_out_plus = 'h'
+		go_out_plus = 'h',
+		close = '<esc>'
 	},
 	windows = {
 		max_number = 1
-	}
+	},
 })
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'MiniFilesWindowOpen',
@@ -212,7 +215,53 @@ vim.api.nvim_create_autocmd('User', {
 })
 
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
-require('mini.git').setup()
+require('mini.git').setup({
+	commands = {
+		blame = "blame --no-filename"
+	}
+})
+
+vim.api.nvim_set_hl(0, "GitBlameHashRoot", { link = "Tag" })
+vim.api.nvim_set_hl(0, "GitBlameHash", { link = "Identifier" })
+vim.api.nvim_set_hl(0, "GitBlameAuthor", { link = "String" })
+vim.api.nvim_set_hl(0, "GitBlameDate", { link = "Comment" })
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'MiniGitCommandSplit',
+	callback = function(e)
+		if e.data.git_subcommand ~= 'blame' then
+			return
+		end
+		local win_src = e.data.win_source
+		local buf = e.buf
+		local win = e.data.win_stdout
+		-- Opts
+		vim.bo[buf].modifiable = false
+		vim.wo[win].wrap = false
+		vim.wo[win].cursorline = true
+		-- View
+		vim.fn.winrestview({ topline = vim.fn.line('w0', win_src) })
+		vim.api.nvim_win_set_cursor(0, { vim.fn.line('.', win_src), 0 })
+		vim.wo[win].scrollbind, vim.wo[win_src].scrollbind = true, true
+		vim.wo[win].cursorbind, vim.wo[win_src].cursorbind = true, true
+		-- Vert width
+		if e.data.cmd_input.mods:match("vertical") then
+			local lines = vim.api.nvim_buf_get_lines(0, 1, -1, false)
+			local width = vim.iter(lines):fold(-1, function(acc, ln)
+				local stat = string.match(ln, "^%S+ %b()")
+				return math.max(acc, vim.fn.strwidth(stat))
+			end)
+			width = width + vim.fn.getwininfo(win)[1].textoff
+			vim.api.nvim_win_set_width(win, width)
+		end
+		-- Highlight
+		vim.fn.matchadd("GitBlameHashRoot", [[^^\w\+]])
+		vim.fn.matchadd("GitBlameHash", [[^\w\+]])
+		local leftmost = [[^.\{-}\zs]]
+		vim.fn.matchadd("GitBlameAuthor", leftmost .. [[(\zs.\{-} \ze\d\{4}-]])
+		vim.fn.matchadd("GitBlameDate", leftmost .. [[[0-9-]\{10} [0-9:]\{8} [+-]\d\+]])
+	end
+})
 require('mini.diff').setup()
 
 
@@ -399,8 +448,8 @@ vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]e
 vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
 
 --Git Keys
-vim.keymap.set('n', '<leader>gB', '<CMD>Gitsigns blame<CR>', { desc = '[G]it [B]lame File' })
-vim.keymap.set('n', '<leader>gb', '<CMD>Gitsigns blame_line<CR>', { desc = '[G]it [B]lame Line' })
+vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
+vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
 
 --LSP keys
 vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definition' } end,
@@ -426,7 +475,10 @@ vim.keymap.set('n', '<leader>f',
 	{ desc = '[F]ormat' })
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
-local minifiles_toggle = function() if not MiniFiles.close() then MiniFiles.open() end end
+local minifiles_toggle = function()
+	local current_file = vim.api.nvim_buf_get_name(0)
+	if not MiniFiles.close() then MiniFiles.open(current_file) end
+end
 vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
 vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
