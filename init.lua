@@ -356,8 +356,10 @@ vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, { desc = '[P]lugi
 
 
 --Diagnostic Keys
-vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Open [D]iagnostic [Q]uickfix List' })
-vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = 'Open [D]iagnostic [F]loating Window' })
+-- vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Open [D]iagnostic [Q]uickfix List' })
+-- vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = 'Open [D]iagnostic [F]loating Window' })
+vim.keymap.set('n', '<leader>dl', MiniExtra.pickers.diagnostic, { desc = '[D]iagnostic [L]ist' })
+vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = '[D]iagnostic [F]loating Window' })
 vim.diagnostic.config {
 	severity_sort = true,
 	float = { border = 'rounded', source = 'if_many' },
