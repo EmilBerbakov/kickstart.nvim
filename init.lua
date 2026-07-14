@@ -4,6 +4,8 @@ vim.o.number = true
 vim.o.relativenumber = true
 vim.o.signcolumn = 'yes'
 vim.o.winborder = 'rounded'
+vim.o.pumborder = 'rounded'
+vim.o.pumheight = 7
 vim.g.have_nerd_font = true
 vim.o.mouse = 'a'
 vim.o.showmode = false
@@ -17,10 +19,13 @@ vim.o.splitbelow = true
 vim.o.list = true
 vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_netrw = 1
--- vim.o.termguicolors = false
+vim.o.termguicolors = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.o.inccommand = 'split'
 vim.o.confirm = true
+-- vim.o.autocomplete = true
+-- vim.o.completeopt = 'fuzzy,menu,menuone,noselect'
+-- vim.o.complete = 'o,.'
 require('vim._core.ui2').enable({})
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
 vim.o.cursorline = true
@@ -64,58 +69,54 @@ require('auto-dark-mode').setup({
 
 if is_windows then
 	vim.opt.shell = 'pwsh -nologo'
-
-	_G.reload_theme = function()
-		local f = io.open(vim.fn.expand('~/AppData/Local/nvim/lua/generated_colors.lua'), 'r')
-		if not f then
-			vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
-			return
-		end
-		local tab = f:read('*a')
-		f:close()
-
-		local load_tab, err = load(tab)
-		if err then
-			vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
-			return
-		end
-		if load_tab then
-			local ok, new_palette = pcall(load_tab)
-			if ok and type(new_palette) == 'table' then
-				require('mini.base16').setup({ palette = new_palette })
-			end
-		end
-	end
-
-	-- Fallback check on startup if file loading fails
-	package.loaded['generated_colors'] = nil
-	local ok, new_palette = pcall(require, 'generated_colors')
-	if ok then
-		require('mini.base16').setup({ palette = new_palette })
-	end
-
-	_G.reload_theme()
-
-	_G.watcher = vim.uv.new_fs_event()
-	local path = vim.fn.expand('~/AppData/Local/nvim/lua')
-	local is_reloading = false
-
-	if _G.watcher then
-		_G.watcher:start(path, {}, vim.schedule_wrap(function(err, filename, _)
-			if err or not filename then
-				vim.notify('Failed to initialize Matugen Theme File Watcher.', vim.log.levels.ERROR)
+	if vim.o.termguicolors then
+		_G.reload_theme = function()
+			local f = io.open(vim.fn.expand('~/AppData/Local/nvim/lua/generated_colors.lua'), 'r')
+			if not f then
+				vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
 				return
 			end
-			if filename == 'generated_colors.lua' and not is_reloading then
-				is_reloading = true
-				vim.defer_fn(function()
-					_G.reload_theme()
-					is_reloading = false
-				end, 50)
+			local tab = f:read('*a')
+			f:close()
+
+			local load_tab, err = load(tab)
+			if err then
+				vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
+				return
 			end
-		end))
-	else
-		vim.notify('Failed to initialize file watcher', vim.log.levels.ERROR)
+			if load_tab then
+				local ok, new_palette = pcall(load_tab)
+				if ok and type(new_palette) == 'table' then
+					require('mini.base16').setup({ palette = new_palette })
+					vim.g.colors_name = 'generated_colors'
+				end
+			end
+		end
+
+		_G.reload_theme()
+
+		_G.watcher = vim.uv.new_fs_event()
+		local path = vim.fn.expand('~/AppData/Local/nvim/lua')
+		local is_reloading = false
+
+		if _G.watcher then
+			_G.watcher:start(path, {}, vim.schedule_wrap(function(err, filename, _)
+				if err or not filename then
+					vim.notify('Failed to initialize Matugen Theme File Watcher.',
+						vim.log.levels.ERROR)
+					return
+				end
+				if filename == 'generated_colors.lua' and not is_reloading then
+					is_reloading = true
+					vim.defer_fn(function()
+						_G.reload_theme()
+						is_reloading = false
+					end, 50)
+				end
+			end))
+		else
+			vim.notify('Failed to initialize file watcher', vim.log.levels.ERROR)
+		end
 	end
 end
 require('mini.extra').setup()
@@ -167,7 +168,7 @@ miniclue.setup({
 	clues = {
 		{ mode = 'n', keys = '<leader>s', desc = '[S]earch' },
 		{ mode = 'n', keys = '<leader>p', desc = '[P]lugin' },
-		-- { mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
+		{ mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
 		{ mode = 'n', keys = '<leader>g', desc = '[G]it' },
 		miniclue.gen_clues.square_brackets(),
 		miniclue.gen_clues.builtin_completion(),
@@ -270,6 +271,35 @@ local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_
 for _, server in ipairs(servers) do
 	vim.lsp.enable(server)
 end
+
+-- vim.api.nvim_create_autocmd('LspAttach', {
+-- 	group = vim.api.nvim_create_augroup('lsp_completion', { clear = true }),
+-- 	callback = function(args)
+-- 		local client_id = args.data.client_id
+-- 		if not client_id then return end
+-- 		local client = vim.lsp.get_client_by_id(client_id)
+--
+-- 		if client and client:supports_method('textDocument/completion') then
+-- 			vim.lsp.completion.enable(true, client_id, args.buf, {
+-- 				autotrigger = true
+-- 			})
+-- 		end
+-- 	end
+--
+-- })
+--
+-- vim.api.nvim_create_autocmd('LspAttach', {
+-- 	callback = function()
+-- 		vim.lsp.buf.signature_help({
+-- 			border = 'rounded',
+-- 			offset_y = -7
+-- 		})
+-- 		-- vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(vim.lsp.handlers.signature_help, {
+-- 		-- 	border = 'rounded',
+-- 		-- 	offset_y = -7
+-- 		-- })
+-- 	end
+-- })
 
 vim.lsp.config.angularls = {
 	cmd = {
@@ -410,6 +440,9 @@ vim.keymap.set('n', '<leader>pc', pack_clean, { desc = '[P]lugin [C]leanup' })
 vim.keymap.set('n', '<leader>pu', vim.pack.update, { desc = '[P]lugin [U]pdate' })
 vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, { desc = '[P]lugin [L]ist' })
 
+--Diagnostics keys
+vim.keymap.set('n', '<leader>dl', MiniExtra.pickers.diagnostic, { desc = '[D]iagnostics [L]ist' })
+vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = '[D]iagnostics [F]loating Window' })
 vim.diagnostic.config {
 	severity_sort = true,
 	float = { border = 'rounded', source = 'if_many' },
@@ -443,7 +476,6 @@ vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]i
 vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
-vim.keymap.set('n', '<leader>sd', MiniExtra.pickers.diagnostic, { desc = '[S]earch [D]iagnostics in all buffers' })
 
 --Git Keys
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
@@ -456,9 +488,12 @@ vim.keymap.set('n', 'gri', '<cmd>Pick lsp scope="implementation"<cr>', { desc = 
 vim.keymap.set('n', 'grr', '<cmd>Pick lsp scope="references"<cr>', { desc = '[G]oto [R]eferences' })
 vim.keymap.set('n', 'grt', '<cmd>Pick lsp scope="type_definition"<cr>', { desc = '[G]oto [T]ype Definition' })
 vim.keymap.set('n', 'gO', '<cmd>Pick lsp scope="document_symbol"<cr>', { desc = '[G]oto D[o]cument Symbol' })
+
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
+
+
 
 --Misc. Keys
 vim.keymap.set('n', '<leader>f',
