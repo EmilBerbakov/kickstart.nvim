@@ -97,7 +97,6 @@ vim.api.nvim_create_autocmd('User', {
 		vim.fn.matchadd("GitBlameDate", leftmost .. [[[0-9-]\{10} [0-9:]\{8} [+-]\d\+]])
 	end
 })
-vim._resolve_bufnr()
 
 require('mini.diff').setup()
 require('guess-indent').setup({})
