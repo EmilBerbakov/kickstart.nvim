@@ -433,6 +433,8 @@ vim.keymap.set('n', '<leader>sn', MiniNotify.show_history, { desc = '[S]earch [N
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
 -- TODO: fix; doesn't work
 -- vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
+vim.keymap.set('n', '<leader>gS', '<CMD>Git add .<CR> | <CMD>Git commit<CR> | <CMD>Git push<CR>',
+	{ desc = '[G]it [S]end it' })
 vim.keymap.set('n', '<leader>gb', '<CMD>Pick git_branches<CR>', { desc = 'Show [G]it [B]ranches' })
 
 
