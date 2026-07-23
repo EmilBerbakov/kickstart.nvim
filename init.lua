@@ -11,6 +11,8 @@ vim.o.clipboard = 'unnamedplus'
 vim.o.breakindent = true
 vim.o.undofile = true
 vim.o.ignorecase = true
+vim.o.wildignorecase = true
+vim.opt.wildoptions:append('fuzzy')
 vim.o.smartcase = true
 vim.o.splitright = true
 vim.o.splitbelow = true
@@ -19,9 +21,11 @@ vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.o.inccommand = 'split'
 vim.o.confirm = true
 vim.opt.termguicolors = true
+vim.o.winborder = 'rounded'
+vim.o.pumborder = 'rounded'
+vim.o.pumheight = 5
 require('vim._core.ui2').enable({})
-local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
-vim.o.cursorline = is_windows
+vim.o.cursorline = true
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
 	--for example, ts_ls needs typescript-language-server installed, which is done with
@@ -32,19 +36,15 @@ vim.pack.add {
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
+	{ src = 'https://github.com/f-person/auto-dark-mode.nvim' },
+	{ src = 'https://github.com/saghen/blink.cmp',            version = vim.version.range('^1') },
 }
-if not is_windows then
-	vim.pack.add { { src = 'https://github.com/shaunsingh/nord.nvim' } }
-	vim.g.nord_disable_background = true
-	vim.cmd.colorscheme 'nord'
-else
-	vim.pack.add { { src = 'https://github.com/f-person/auto-dark-mode.nvim' } }
-	vim.cmd.colorscheme 'catppuccin'
-	require('auto-dark-mode').setup({
-		update_interval = 1000
-	})
-	vim.opt.shell = 'pwsh -nologo'
-end
+
+vim.cmd.colorscheme 'catppuccin'
+require('auto-dark-mode').setup({
+	update_interval = 1000
+})
+vim.opt.shell = 'pwsh -nologo'
 require('mini.extra').setup()
 require('mini.pick').setup()
 require('mini.pairs').setup()
@@ -97,6 +97,7 @@ vim.api.nvim_create_autocmd('User', {
 		vim.fn.matchadd("GitBlameDate", leftmost .. [[[0-9-]\{10} [0-9:]\{8} [+-]\d\+]])
 	end
 })
+vim._resolve_bufnr()
 
 require('mini.diff').setup()
 require('guess-indent').setup({})
@@ -191,14 +192,39 @@ vim.api.nvim_create_autocmd("User", {
 
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 
-require('mini.completion').setup()
-local mini_snippets = require('mini.snippets')
-mini_snippets.setup({
-	snippets = {
-		mini_snippets.gen_loader.from_lang()
-	}
-})
-mini_snippets.start_lsp_server({ match = false })
+require('blink.cmp').setup {
+	fuzzy = { implementation = 'prefer_rust', prebuilt_binaries = { force_version = 'v*' } },
+	completion = { documentation = { auto_show = false } },
+	sources = {
+
+
+		default = { "lazydev", "lsp", "path", "snippets", "buffer" },
+		providers = {
+			lazydev = {
+				name = "LazyDev",
+				module = "lazydev.integrations.blink",
+				-- make lazydev completions top priority (see `:h blink.cmp`)
+				score_offset = 100,
+			},
+		},
+
+	},
+	signature = {
+		enabled = true,
+		trigger = {
+			show_on_trigger_character = false,
+			show_on_insert_on_trigger_character = false,
+		},
+		window = {
+			show_documentation = true
+		}
+	},
+
+	keymap = {
+		preset = 'default'
+	},
+
+}
 
 local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls' }
 
@@ -207,14 +233,14 @@ for _, server in ipairs(servers) do
 end
 
 vim.lsp.config.angularls = {
-	cmd = {
-		'ngserver',
-		'--stdio',
-		'--tsProbeLocations',
-		string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
-		'--ngProbeLocations',
-		string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
-	},
+	-- cmd = {
+	-- 	'ngserver',
+	-- 	'--stdio',
+	-- 	'--tsProbeLocations',
+	-- 	string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
+	-- 	'--ngProbeLocations',
+	-- 	string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
+	-- },
 	on_attach = function(_, bufnr)
 		if not string.find(vim.fn.expand '%t', '.component.') then
 			return
@@ -392,28 +418,31 @@ vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
-vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
+vim.keymap.set('n', '<leader>su', '<CMD>packadd nvim.undotree<cr> | <CMD>Undotree<cr>', { desc = '[S]earch [U]ndotree' })
+
+local wipeout_cur = function()
+	vim.api.nvim_buf_delete(MiniPick.get_picker_matches().current.bufnr, {})
+end
+local buffer_mappings = { wipeout = { char = '<C-d>', func = wipeout_cur } }
+
+vim.keymap.set('n', '<leader>sb', function() MiniPick.builtin.buffers(local_opts, { mappings = buffer_mappings }) end,
+	{ desc = '[S]earch [B]uffers' })
 vim.keymap.set('n', '<leader>sn', MiniNotify.show_history, { desc = '[S]earch [N]otification History' })
 
 --Git Keys
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
-vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
+-- TODO: fix; doesn't work
+-- vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
+vim.keymap.set('n', '<leader>gb', '<CMD>Pick git_branches<CR>', { desc = 'Show [G]it [B]ranches' })
 
 
 --LSP keys
-vim.keymap.set('n', 'grd', function() MiniExtra.pickers.lsp { scope = 'definition' } end,
-	{ desc = '[G]oto [D]efinition' })
-vim.keymap.set('n', 'grD', function() MiniExtra.pickers.lsp { scope = 'declaration' } end,
-	{ desc = '[G]oto [D]eclaration' })
-vim.keymap.set('n', 'gri', function() MiniExtra.pickers.lsp { scope = 'implementation' } end,
-	{ desc = '[G]oto [I]mplementation' })
-vim.keymap.set('n', 'grr', function()
-	MiniExtra.pickers.lsp { scope = 'references' }
-end, { desc = '[G]oto [R]eferences' })
-vim.keymap.set('n', 'grt', function() MiniExtra.pickers.lsp { scope = 'type_definition' } end,
-	{ desc = '[G]oto [T]ype Definition' })
-vim.keymap.set('n', 'gO', function() MiniExtra.pickers.lsp { scope = 'document_symbol' } end,
-	{ desc = '[G]oto D[o]cument Symbol' })
+vim.keymap.set('n', 'grd', '<cmd>Pick lsp scope="definition"<cr>', { desc = '[G]oto [D]efinition' })
+vim.keymap.set('n', 'grD', '<cmd>Pick lsp scope="declaration"<cr>', { desc = '[G]oto [D]eclaration' })
+vim.keymap.set('n', 'gri', '<cmd>Pick lsp scope="implementation"<cr>', { desc = '[G]oto [I]mplementation' })
+vim.keymap.set('n', 'grr', '<cmd>Pick lsp scope="references"<cr>', { desc = '[G]oto [R]eferences' })
+vim.keymap.set('n', 'grt', '<cmd>Pick lsp scope="type_definition"<cr>', { desc = '[G]oto [T]ype Definition' })
+vim.keymap.set('n', 'gO', '<cmd>Pick lsp scope="document_symbol"<cr>', { desc = '[G]oto D[o]cument Symbol' })
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'E[x]ecute Code Under Cursor')
