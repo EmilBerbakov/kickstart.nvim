@@ -2,10 +2,10 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.o.number = true
 vim.o.relativenumber = true
-vim.o.signcolumn = 'yes'
+vim.o.signcolumn = 'yes:1'
 vim.o.winborder = 'rounded'
 vim.o.pumborder = 'rounded'
-vim.o.pumheight = 7
+vim.o.pumheight = 5
 vim.g.have_nerd_font = true
 vim.o.mouse = 'a'
 vim.o.showmode = false
@@ -23,10 +23,9 @@ vim.o.termguicolors = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.o.inccommand = 'split'
 vim.o.confirm = true
--- vim.o.autocomplete = true
--- vim.o.completeopt = 'fuzzy,menu,menuone,noselect'
--- vim.o.complete = 'o,.'
-require('vim._core.ui2').enable({})
+vim.o.autocomplete = true
+vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert'
+require('vim._core.ui2').enable()
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
 vim.o.cursorline = true
 vim.pack.add {
@@ -35,17 +34,20 @@ vim.pack.add {
 	-- ``` npm install -g typescript-language-server typescript ```
 	-- For Windows, this path is %localappdata%\nvim-data\site\pack\core\opt\nvim-lspconfig\lsp
 	--TODO: - testing
+	-- Delete this line
 	{ src = 'https://github.com/neovim/nvim-lspconfig' },
-	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
+	{ src = 'https://github.com/f-person/auto-dark-mode.nvim' }
 }
-vim.pack.add { { src = 'https://github.com/f-person/auto-dark-mode.nvim' } }
+
+vim.cmd.packadd('nvim.undotree')
+
 require('auto-dark-mode').setup({
 	update_interval = 1000,
 	set_dark_mode = function()
-		if vim.o.termguicolors == false
+		if vim.o.termguicolors == true
 		then
 			return
 		end
@@ -56,7 +58,7 @@ require('auto-dark-mode').setup({
 	end,
 
 	set_light_mode = function()
-		if vim.o.termguicolors == false
+		if vim.o.termguicolors == true
 		then
 			return
 		end
@@ -124,7 +126,7 @@ require('mini.pick').setup()
 require('mini.pairs').setup()
 require('mini.surround').setup()
 require('mini.notify').setup()
-require('guess-indent').setup({})
+
 local miniclue = require('mini.clue')
 miniclue.setup({
 	triggers = {
@@ -188,7 +190,7 @@ end
 
 require('mini.ai').setup { nlines = 500 }
 require('mini.icons').setup()
-require('mini.completion').setup()
+-- require('mini.completion').setup()
 require('mini.files').setup({
 	mappings = {
 		go_in = 'L',
@@ -217,9 +219,9 @@ vim.api.nvim_create_autocmd('User', {
 
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 require('mini.git').setup({
-	commands = {
-		blame = "blame --no-filename"
-	}
+	-- commands = {
+	-- 	blame = "blame --no-filename"
+	-- }
 })
 
 vim.api.nvim_set_hl(0, "GitBlameHashRoot", { link = "Tag" })
@@ -266,50 +268,64 @@ vim.api.nvim_create_autocmd('User', {
 require('mini.diff').setup()
 
 
-local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls', 'cssls', 'pyright' }
+local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls', 'cssls', 'basedpyright' }
 
 for _, server in ipairs(servers) do
 	vim.lsp.enable(server)
 end
 
--- vim.api.nvim_create_autocmd('LspAttach', {
--- 	group = vim.api.nvim_create_augroup('lsp_completion', { clear = true }),
--- 	callback = function(args)
--- 		local client_id = args.data.client_id
--- 		if not client_id then return end
--- 		local client = vim.lsp.get_client_by_id(client_id)
---
--- 		if client and client:supports_method('textDocument/completion') then
--- 			vim.lsp.completion.enable(true, client_id, args.buf, {
--- 				autotrigger = true
--- 			})
--- 		end
--- 	end
---
--- })
---
--- vim.api.nvim_create_autocmd('LspAttach', {
--- 	callback = function()
--- 		vim.lsp.buf.signature_help({
--- 			border = 'rounded',
--- 			offset_y = -7
--- 		})
--- 		-- vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(vim.lsp.handlers.signature_help, {
--- 		-- 	border = 'rounded',
--- 		-- 	offset_y = -7
--- 		-- })
--- 	end
--- })
 
-vim.lsp.config.angularls = {
-	cmd = {
-		'ngserver',
-		'--stdio',
-		'--tsProbeLocations',
-		string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
-		'--ngProbeLocations',
-		string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
-	},
+vim.api.nvim_create_autocmd('LspAttach', {
+	group = vim.api.nvim_create_augroup('lsp_completion', { clear = true }),
+	callback = function(args)
+		local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
+		if client and client:supports_method('textDocument/completion') then
+			vim.o.complete = 'o,.,w,b,u'
+			vim.o.completeopt = 'menu,menuone,popup,noinsert'
+			vim.lsp.completion.enable(true, client.id, args.buf, {
+				autotrigger = true
+			})
+		end
+	end
+})
+
+--TODO: either install nvim-treesitter (https://github.com/nvim-treesitter/nvim-treesitter) or figure out how to manage Treesitter parsers myself (https://github.com/tree-sitter/tree-sitter/wiki/List-of-parsers | https://tree-sitter.github.io/tree-sitter/index.html)
+vim.api.nvim_create_autocmd('FileType', {
+	callback = function(args)
+		local buf = args.buf
+		local ok = pcall(vim.treesitter.start, buf)
+
+		if not ok then
+			vim.bo[buf].syntax = 'on'
+		else
+			vim.bo[buf].syntax = 'off'
+		end
+	end
+})
+
+--TODO: fix this
+-- local orig_sig = vim.lsp.handlers['textDocument/signatureHelp']
+--
+-- vim.lsp.handlers['textDocument/signatureHelp'] = function(err, result, ctx, config)
+-- 	config = config or {}
+-- 	local offset = 0
+-- 	if vim.fn.pumvisible() == 1 then
+-- 		local pum = vim.fn.pum_getpos()
+-- 		offset = (pum.col + pum.width) - vim.fn.col('.') + 2
+-- 	end
+-- 	config.offset_x = offset
+-- 	orig_sig(err, result, ctx, config)
+-- end
+
+vim.lsp.config('angularls', {
+	-- cmd = {
+	-- 	'ngserver',
+	-- 	'--stdio',
+	-- 	'--tsProbeLocations',
+	-- 	string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
+	-- 	'--ngProbeLocations',
+	-- 	string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
+	-- },
 	on_attach = function(_, bufnr)
 		if not string.find(vim.fn.expand '%t', '.component.') then
 			return
@@ -353,7 +369,7 @@ vim.lsp.config.angularls = {
 
 	filetypes = { 'typescript', 'html', 'typescriptreact', 'htmlangular', 'scss', 'css' },
 
-}
+})
 
 require('conform').setup({
 	notify_on_error = false,
@@ -476,10 +492,12 @@ vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]i
 vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 vim.keymap.set('n', '<leader>sb', '<CMD>Pick buffers<CR>', { desc = '[S]earch [B]uffers' })
+vim.keymap.set('n', '<leader>su', '<CMD>Undotree<CR>', { desc = '[S]earch [U]ndotree' })
+vim.keymap.set('n', '<leader>sh', '<CMD> vsplit | lua MiniNotify.show_history()<cr>')
 
 --Git Keys
-vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
-vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
+vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -s %<CR>', { desc = '[G]it [B]lame File' })
+-- vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
 
 --LSP keys
 vim.keymap.set('n', 'grd', '<cmd>Pick lsp scope="definition"<cr>', { desc = '[G]oto [D]efinition' })
