@@ -51,7 +51,11 @@ require('mini.pairs').setup()
 require('mini.surround').setup()
 require('mini.notify').setup()
 require('mini.git').setup()
-require('diffview').setup()
+require('diffview').setup({
+	hooks = {
+		view_enter = function() require("mini.clue").ensure_buf_triggers() end
+	}
+})
 
 local align_blame = function(au_data)
 	if au_data.data.git_subcommand ~= 'blame' then return end
@@ -412,14 +416,13 @@ end, { desc = '[S]earch [N]otification History' })
 --Git Keys
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -l -s %<CR>', { desc = '[G]it [B]lame File' })
 -- TODO: fix; doesn't work
-vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
--- vim.keymap.set('n', '<leader>gS', '<CMD>Git add .<CR> | <CMD>Git commit<CR> | <CMD>Git push<CR>',
--- 	{ desc = '[G]it [S]end it' })
+vim.keymap.set('n', '<leader>gS', ':Git send ',
+	{ desc = '[G]it [S]end (No quotes; " " = "\\ ")' })
 vim.keymap.set('n', '<leader>gb', '<CMD>Pick git_branches<CR>', { desc = 'Show [G]it [B]ranches' })
 vim.keymap.set('n', '<leader>gc', '<CMD>Pick git_commits path="%"<cr>',
 	{ desc = 'Search [G]it [C]ommits (current file)' })
 vim.keymap.set('n', '<leader>gC', '<CMD>Pick git_commits<cr>',
-	{ desc = 'Search [G]it [C]ommits (current working directory)' })
+	{ desc = 'Search [G]it [C]ommits (cwd)' })
 vim.keymap.set('n', '<leader>gd', '<CMD>DiffviewToggle<CR>', { desc = 'Toggle [G]it [D]iffview' })
 
 
