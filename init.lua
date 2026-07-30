@@ -24,7 +24,7 @@ vim.opt.termguicolors = true
 vim.o.winborder = 'rounded'
 vim.o.pumborder = 'rounded'
 vim.o.pumheight = 5
-require('vim._core.ui2').enable({})
+require('vim._core.ui2').enable()
 vim.o.cursorline = true
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
@@ -32,12 +32,12 @@ vim.pack.add {
 	-- ``` npm install -g typescript-language-server typescript ```
 	-- For Windows, this path is %localappdata%\nvim-data\site\pack\core\opt\nvim-lspconfig\lsp
 	{ src = 'https://github.com/neovim/nvim-lspconfig' },
-	{ src = 'https://github.com/NMAC427/guess-indent.nvim' },
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
 	{ src = 'https://github.com/f-person/auto-dark-mode.nvim' },
-	{ src = 'https://github.com/saghen/blink.cmp',            version = vim.version.range('^1') },
+	{ src = 'https://github.com/saghen/blink.cmp',               version = vim.version.range('^1') },
+	{ src = 'https://github.com/dlyongemallo/diffview-plus.nvim' }
 }
 
 vim.cmd.colorscheme 'catppuccin'
@@ -50,56 +50,28 @@ require('mini.pick').setup()
 require('mini.pairs').setup()
 require('mini.surround').setup()
 require('mini.notify').setup()
-require('mini.git').setup({
-	commands = {
-		blame = "blame --no-filename"
-	}
-})
+require('mini.git').setup()
+require('diffview').setup()
 
-vim.api.nvim_set_hl(0, "GitBlameHashRoot", { link = "Tag" })
-vim.api.nvim_set_hl(0, "GitBlameHash", { link = "Identifier" })
-vim.api.nvim_set_hl(0, "GitBlameAuthor", { link = "String" })
-vim.api.nvim_set_hl(0, "GitBlameDate", { link = "Comment" })
+local align_blame = function(au_data)
+	if au_data.data.git_subcommand ~= 'blame' then return end
 
-vim.api.nvim_create_autocmd('User', {
-	pattern = 'MiniGitCommandSplit',
-	callback = function(e)
-		if e.data.git_subcommand ~= 'blame' then
-			return
-		end
-		local win_src = e.data.win_source
-		local buf = e.buf
-		local win = e.data.win_stdout
-		-- Opts
-		vim.bo[buf].modifiable = false
-		vim.wo[win].wrap = false
-		vim.wo[win].cursorline = true
-		-- View
-		vim.fn.winrestview({ topline = vim.fn.line('w0', win_src) })
-		vim.api.nvim_win_set_cursor(0, { vim.fn.line('.', win_src), 0 })
-		vim.wo[win].scrollbind, vim.wo[win_src].scrollbind = true, true
-		vim.wo[win].cursorbind, vim.wo[win_src].cursorbind = true, true
-		-- Vert width
-		if e.data.cmd_input.mods:match("vertical") then
-			local lines = vim.api.nvim_buf_get_lines(0, 1, -1, false)
-			local width = vim.iter(lines):fold(-1, function(acc, ln)
-				local stat = string.match(ln, "^%S+ %b()")
-				return math.max(acc, vim.fn.strwidth(stat))
-			end)
-			width = width + vim.fn.getwininfo(win)[1].textoff
-			vim.api.nvim_win_set_width(win, width)
-		end
-		-- Highlight
-		vim.fn.matchadd("GitBlameHashRoot", [[^^\w\+]])
-		vim.fn.matchadd("GitBlameHash", [[^\w\+]])
-		local leftmost = [[^.\{-}\zs]]
-		vim.fn.matchadd("GitBlameAuthor", leftmost .. [[(\zs.\{-} \ze\d\{4}-]])
-		vim.fn.matchadd("GitBlameDate", leftmost .. [[[0-9-]\{10} [0-9:]\{8} [+-]\d\+]])
-	end
-})
+	-- Align blame output with source
+	local win_src = au_data.data.win_source
+	vim.bo[au_data.buf].modifiable = false
+	vim.wo.wrap = false
+	vim.wo.cursorline = true
+	vim.fn.winrestview({ topline = vim.fn.line('w0', win_src) })
+	vim.api.nvim_win_set_cursor(0, { vim.fn.line('.', win_src), 0 })
 
-require('mini.diff').setup()
-require('guess-indent').setup({})
+	-- Bind both windows so that they scroll together
+	vim.wo[win_src].scrollbind, vim.wo.scrollbind = true, true
+	vim.wo[win_src].cursorbind, vim.wo.cursorbind = true, true
+end
+
+local au_opts = { pattern = 'MiniGitCommandSplit', callback = align_blame }
+vim.api.nvim_create_autocmd('User', au_opts)
+
 local miniclue = require('mini.clue')
 miniclue.setup({
 	triggers = {
@@ -193,7 +165,7 @@ require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'v
 
 require('blink.cmp').setup {
 	fuzzy = { implementation = 'prefer_rust', prebuilt_binaries = { force_version = 'v*' } },
-	completion = { documentation = { auto_show = false } },
+	completion = { documentation = { auto_show = true } },
 	sources = {
 
 
@@ -231,15 +203,15 @@ for _, server in ipairs(servers) do
 	vim.lsp.enable(server)
 end
 
-vim.lsp.config.angularls = {
-	-- cmd = {
-	-- 	'ngserver',
-	-- 	'--stdio',
-	-- 	'--tsProbeLocations',
-	-- 	string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
-	-- 	'--ngProbeLocations',
-	-- 	string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
-	-- },
+vim.lsp.config('angularls', {
+	cmd = {
+		'ngserver',
+		'--stdio',
+		'--tsProbeLocations',
+		string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
+		'--ngProbeLocations',
+		string.format("%s/node_modules", vim.fs.root(0, 'angular.json')),
+	},
 	on_attach = function(_, bufnr)
 		if not string.find(vim.fn.expand '%t', '.component.') then
 			return
@@ -283,16 +255,16 @@ vim.lsp.config.angularls = {
 
 	filetypes = { 'typescript', 'html', 'typescriptreact', 'htmlangular', 'scss', 'css' },
 
-}
+})
 
-vim.lsp.config.csharp_ls = {
+vim.lsp.config('csharp_ls', {
 	on_attach = function()
 		vim.opt_local.foldlevel = 99
 		vim.opt_local.foldmethod = "expr"
 		vim.opt_local.foldexpr = "v:lua.vim.lsp.foldexpr()"
 		vim.opt_local.foldtext = "v:lua.vim.lsp.foldtext()"
 	end
-}
+})
 
 require('conform').setup({
 	notify_on_error = false,
@@ -383,7 +355,10 @@ vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, { desc = '[P]lugi
 --Diagnostic Keys
 -- vim.keymap.set('n', '<leader>dq', vim.diagnostic.setloclist, { desc = 'Open [D]iagnostic [Q]uickfix List' })
 -- vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = 'Open [D]iagnostic [F]loating Window' })
-vim.keymap.set('n', '<leader>dl', MiniExtra.pickers.diagnostic, { desc = '[D]iagnostic [L]ist' })
+vim.keymap.set('n', '<leader>dl', function() MiniExtra.pickers.diagnostic({ scope = 'current' }) end,
+	{ desc = '[D]iagnostic [L]ist (current buffer)' })
+vim.keymap.set('n', '<leader>dL', function() MiniExtra.pickers.diagnostic() end,
+	{ desc = '[D]iagnostic [L]ist (all buffers)' })
 vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = '[D]iagnostic [F]loating Window' })
 vim.diagnostic.config {
 	severity_sort = true,
@@ -426,15 +401,26 @@ local buffer_mappings = { wipeout = { char = '<C-d>', func = wipeout_cur } }
 
 vim.keymap.set('n', '<leader>sb', function() MiniPick.builtin.buffers(local_opts, { mappings = buffer_mappings }) end,
 	{ desc = '[S]earch [B]uffers' })
-vim.keymap.set('n', '<leader>sn', MiniNotify.show_history, { desc = '[S]earch [N]otification History' })
+vim.keymap.set('n', '<leader>sn', function()
+	vim.cmd('vsplit')
+	MiniNotify.show_history()
+	vim.opt_local.modifiable = false
+	vim.opt_local.modified = false
+	vim.opt_local.readonly = true
+end, { desc = '[S]earch [N]otification History' })
 
 --Git Keys
-vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -- %<CR>', { desc = '[G]it [B]lame File' })
+vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -l -s %<CR>', { desc = '[G]it [B]lame File' })
 -- TODO: fix; doesn't work
--- vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
+vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end' })
 -- vim.keymap.set('n', '<leader>gS', '<CMD>Git add .<CR> | <CMD>Git commit<CR> | <CMD>Git push<CR>',
 -- 	{ desc = '[G]it [S]end it' })
 vim.keymap.set('n', '<leader>gb', '<CMD>Pick git_branches<CR>', { desc = 'Show [G]it [B]ranches' })
+vim.keymap.set('n', '<leader>gc', '<CMD>Pick git_commits path="%"<cr>',
+	{ desc = 'Search [G]it [C]ommits (current file)' })
+vim.keymap.set('n', '<leader>gC', '<CMD>Pick git_commits<cr>',
+	{ desc = 'Search [G]it [C]ommits (current working directory)' })
+vim.keymap.set('n', '<leader>gd', '<CMD>DiffviewToggle<CR>', { desc = 'Toggle [G]it [D]iffview' })
 
 
 --LSP keys
