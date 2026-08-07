@@ -2,7 +2,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.o.number = true
 vim.o.relativenumber = true
-vim.o.signcolumn = 'yes:1'
+vim.o.signcolumn = 'yes'
 vim.o.winborder = 'rounded'
 vim.o.pumborder = 'rounded'
 vim.o.pumheight = 5
@@ -16,19 +16,20 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 vim.o.splitright = true
 vim.o.splitbelow = true
-vim.o.list = true
 vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_netrw = 1
+vim.o.cmdheight = 0
 vim.o.termguicolors = true
 vim.o.smartindent = true
 vim.o.autoindent = true
-vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 vim.o.inccommand = 'split'
 vim.o.confirm = true
+vim.o.laststatus = 3
 vim.o.autocomplete = true
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
 require('vim._core.ui2').enable()
-local is_windows = vim.loop.os_uname().sysname == 'Windows_NT' or vim.env.WSL_DISTRO_NAME ~= nil
+local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
+local is_nightly = vim.version().minor > 12
 vim.o.cursorline = true
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
@@ -39,49 +40,30 @@ vim.pack.add {
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
-	{ src = 'https://github.com/f-person/auto-dark-mode.nvim' }
 }
 
 vim.cmd.packadd('nvim.undotree')
+require('mini.icons').setup()
 
-vim.api.nvim_create_autocmd('PackChanged', {
-	callback = function(ev)
-		local name = ev.data.spec.name
-		local kind = ev.data.kind
-		if kind ~= 'install' and kind ~= 'update' then return end
-
-		if name == 'nvim-treesitter' then
-			if not ev.data.active then vim.cmd.packadd('nvim-treesitter') end
-			vim.cmd('TSUpdate')
-			return
-		end
-	end
+vim.api.nvim_create_autocmd('FileType', {
+	pattern = '*',
+	desc = 'Disable auto-commenting newlines',
+	callback = function() vim.opt_local.formatoptions = 'jql' end
 })
 
-require('auto-dark-mode').setup({
-	update_interval = 1000,
-	set_dark_mode = function()
-		if vim.o.termguicolors == true
-		then
-			return
-		end
-		vim.api.nvim_set_hl(0, "NormalFloat", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
-		vim.api.nvim_set_hl(0, "Pmenu", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
-		vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 235 })
-		vim.api.nvim_set_hl(0, 'Comment', { ctermfg = 14, italic = true })
-	end,
-
-	set_light_mode = function()
-		if vim.o.termguicolors == true
-		then
-			return
-		end
-		vim.api.nvim_set_hl(0, "NormalFloat", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
-		vim.api.nvim_set_hl(0, "Pmenu", { ctermbg = "NONE", ctermfg = "NONE", reverse = false })
-		vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 255 })
-		vim.api.nvim_set_hl(0, 'Comment', { ctermfg = 14, italic = true })
-	end
-})
+-- vim.api.nvim_create_autocmd('PackChanged', {
+-- 	callback = function(ev)
+-- 		local name = ev.data.spec.name
+-- 		local kind = ev.data.kind
+-- 		if kind ~= 'install' and kind ~= 'update' then return end
+--
+-- 		if name == 'nvim-treesitter' then
+-- 			if not ev.data.active then vim.cmd.packadd('nvim-treesitter') end
+-- 			vim.cmd('TSUpdate')
+-- 			return
+-- 		end
+-- 	end
+-- })
 
 if is_windows then
 	vim.opt.shell = 'pwsh -nologo -NoProfile'
@@ -107,6 +89,19 @@ if is_windows then
 				if ok and type(new_palette) == 'table' then
 					require('mini.base16').setup({ palette = new_palette })
 					vim.g.colors_name = 'generated_colors'
+					-- vim.api.nvim_set_hl(0, 'Normal', { bg = 'NONE' })
+					local hls = { 'Normal',
+						'LineNr', 'LineNrAbove', 'LineNrBelow', 'MiniDiffSignAdd',
+						'MiniDiffSignChange', 'MiniDiffSignDelete',
+						--TODO - figure out why clearing bg is making just the diagnostic hls lose their fg colors
+						-- 'DiagnosticSignOk', 'DiagnosticSignHint', 'DiagnosticSignInfo',
+						-- 'DiagnosticSignWarn', 'DiagnosticSignError',  'SignColumn', 'FoldColumn', 'CursorLineSign', 'CursorLineFold', 'CursorLineNr',
+					}
+					for _, hl in ipairs(hls) do
+						-- local colors = vim.api.nvim_get_hl(0, { name = hl })
+						-- vim.api.nvim_set_hl(0, hl, { bg = 'NONE', fg = colors.fg })
+						vim.api.nvim_set_hl(0, hl, { bg = 'NONE' })
+					end
 				end
 			end
 		end
@@ -114,7 +109,7 @@ if is_windows then
 		_G.reload_theme()
 
 		_G.watcher = vim.uv.new_fs_event()
-		local path = vim.fn.expand('~/AppData/Local/nvim/lua')
+		local path = vim.fn.expand('./lua')
 		local is_reloading = false
 
 		if _G.watcher then
@@ -141,7 +136,6 @@ require('mini.extra').setup()
 require('mini.pick').setup()
 require('mini.pairs').setup()
 require('mini.surround').setup()
-require('mini.notify').setup()
 
 local miniclue = require('mini.clue')
 miniclue.setup({
@@ -202,10 +196,6 @@ miniclue.setup({
 })
 local statusline = require 'mini.statusline'
 statusline.setup { use_icons = vim.g.have_nerd_font }
----@diagnostic disable-next-line: duplicate-set-field
-statusline.section_location = function()
-	return '%2l:%-2v'
-end
 
 require('mini.ai').setup {
 	nlines = 500,
@@ -213,32 +203,31 @@ require('mini.ai').setup {
 		around_next = 'aa',
 		inside_next = 'ii'
 	} }
-require('mini.icons').setup()
-require('mini.files').setup({
-	mappings = {
-		go_in = 'L',
-		go_in_plus = 'l',
-		go_out = 'H',
-		go_out_plus = 'h',
-		close = '<esc>'
-	},
-	windows = {
-		max_number = 1
-	},
-})
-vim.api.nvim_create_autocmd('User', {
-	pattern = 'MiniFilesWindowOpen',
-	callback = function() require('mini.clue').enable_buf_triggers() end
-})
+-- require('mini.files').setup({
+-- 	mappings = {
+-- 		go_in = 'L',
+-- 		go_in_plus = 'l',
+-- 		go_out = 'H',
+-- 		go_out_plus = 'h',
+-- 		close = '<esc>'
+-- 	},
+-- 	windows = {
+-- 		max_number = 1
+-- 	},
+-- })
+-- vim.api.nvim_create_autocmd('User', {
+-- 	pattern = 'MiniFilesWindowOpen',
+-- 	callback = function() require('mini.clue').enable_buf_triggers() end
+-- })
 
 
-vim.api.nvim_create_autocmd('User', {
-	pattern = 'MiniFilesWindowUpdate',
-	callback = function(args)
-		vim.wo[args.data.win_id].relativenumber = true
-		vim.wo[args.data.win_id].number = true
-	end
-})
+-- vim.api.nvim_create_autocmd('User', {
+-- 	pattern = 'MiniFilesWindowUpdate',
+-- 	callback = function(args)
+-- 		vim.wo[args.data.win_id].relativenumber = true
+-- 		vim.wo[args.data.win_id].number = true
+-- 	end
+-- })
 
 require('lazydev').setup { library = { path = '${3rd}/luv/library', words = { 'vim%.uv' } } }
 require('mini.git').setup()
@@ -300,8 +289,8 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
 		if client then
 			if client:supports_method('textDocument/completion') then
-				vim.o.complete = 'o,.,w,b,u'
-				vim.o.completeopt = 'menu,menuone,popup,noinsert'
+				-- vim.o.complete = 'o,.,w,b,u'
+				-- vim.o.completeopt = 'menu,menuone,popup,noinsert'
 				vim.lsp.completion.enable(true, client.id, args.buf, {
 					autotrigger = true
 				})
@@ -318,24 +307,24 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	end
 })
 
-vim.pack.add { { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' } }
-require('nvim-treesitter').install('angular', 'html', 'lua', 'diff', 'powershell', 'python', 'c_sharp', 'typescript')
+-- vim.pack.add { { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' } }
+-- require('nvim-treesitter').install('angular', 'html', 'lua', 'diff', 'powershell', 'python', 'c_sharp', 'typescript')
 
 --TODO - maybe just pull the config from Kickstart wholesale for this?
 
-vim.api.nvim_create_autocmd('FileType', {
-	callback = function(args)
-		local buf, filetype = args.buf, args.match
-		local ok = pcall(vim.treesitter.start, buf)
-
-		if not ok then
-			vim.bo[buf].syntax = 'on'
-		else
-			vim.bo[buf].syntax = 'off'
-			-- if vim.treesitter.query.get()
-		end
-	end
-})
+-- vim.api.nvim_create_autocmd('FileType', {
+-- 	callback = function(args)
+-- 		local buf, filetype = args.buf, args.match
+-- 		local ok = pcall(vim.treesitter.start, buf)
+--
+-- 		if not ok then
+-- 			vim.bo[buf].syntax = 'on'
+-- 		else
+-- 			vim.bo[buf].syntax = 'off'
+-- 			-- if vim.treesitter.query.get()
+-- 		end
+-- 	end
+-- })
 
 --TODO: fix this
 -- local orig_sig = vim.lsp.handlers['textDocument/signatureHelp']
@@ -469,12 +458,14 @@ MiniPick.registry.pack_list = function()
 	})
 end
 
-vim.api.nvim_create_autocmd('TextYankPost', {
+local hls = { 'TextYankPost' }
+if is_nightly then table.insert(hls, 'TextPutPost') end
+local hlfs = is_nightly and vim.hl.hl_op or vim.hl.on_yank
+
+vim.api.nvim_create_autocmd(hls, {
 	desc = 'Highlight when yanking (copying) text',
-	group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
-	callback = function()
-		vim.hl.on_yank()
-	end,
+	group = vim.api.nvim_create_augroup('highlight-cmd', { clear = true }),
+	callback = function() hlfs() end
 })
 
 --Package Manager Keys
@@ -528,13 +519,14 @@ local buffer_mappings = { wipeout = { char = '<C-d>', func = wipeout_cur } }
 vim.keymap.set('n', '<leader>sb', function() MiniPick.builtin.buffers(nil, { mappings = buffer_mappings }) end,
 	{ desc = '[S]earch [B]uffers' })
 vim.keymap.set('n', '<leader>su', '<CMD>Undotree<CR>', { desc = '[S]earch [U]ndotree' })
-vim.keymap.set('n', '<leader>sn', function()
-	vim.cmd('vsplit')
-	MiniNotify.show_history()
-	vim.opt_local.modifiable = false
-	vim.opt_local.modified = false
-	vim.opt_local.readonly = true
-end, { desc = '[S]earch [N]otification History' })
+-- vim.keymap.set('n', '<leader>sn', '<CMD>messages<CR>', { desc = "[S]earch [N]otification History" })
+-- vim.keymap.set('n', '<leader>sn', function()
+-- 	vim.cmd('vsplit')
+-- 	MiniNotify.show_history()
+-- 	vim.opt_local.modifiable = false
+-- 	vim.opt_local.modified = false
+-- 	vim.opt_local.readonly = true
+-- end, { desc = '[S]earch [N]otification History' })
 
 --Git Keys
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -s %<CR>', { desc = '[G]it [B]lame File' })
@@ -556,17 +548,21 @@ MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
 
 --Misc. Keys
--- vim.keymap.set('n', '<leader>f',
--- 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
--- 	{ desc = '[F]ormat' })
+vim.keymap.set('n', '<leader>f',
+	function() require("conform").format { async = true, lsp_format = "fallback" } end,
+	{ desc = '[F]ormat' })
 vim.keymap.set('n', '<leader>f', vim.lsp.buf.format, { desc = '[F]ormat buffer' })
 vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
-local minifiles_toggle = function()
-	local current_file = vim.api.nvim_buf_get_name(0)
-	if not MiniFiles.close() then MiniFiles.open(current_file) end
-end
-vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
+-- local minifiles_toggle = function()
+-- 	local current_file = vim.api.nvim_buf_get_name(0)
+-- 	if not MiniFiles.close() then MiniFiles.open(current_file) end
+-- end
+-- vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
+vim.keymap.set('n', '<leader>e', is_nightly and '<cmd>edit %:p:h<cr>' or '<cmd>20Lexplore %:p:h<cr>',
+	{ desc = 'Open Directory (parent)' })
+vim.keymap.set('n', '<leader>E', is_nightly and '<cmd>edit .<CR>' or '<cmd>20Lexplore<cr>',
+	{ desc = 'Open Directory (cwd)' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center cursor on screen' })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
