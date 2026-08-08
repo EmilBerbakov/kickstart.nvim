@@ -69,69 +69,60 @@ if is_windows then
 	vim.opt.shell = 'pwsh -nologo -NoProfile'
 	vim.opt.shellcmdflag = '-ExecutionPolicy RemoteSigned -command'
 	vim.opt.shellxquote = ''
-	if vim.o.termguicolors then
-		_G.reload_theme = function()
-			local f = io.open(vim.fn.expand('~/AppData/Local/nvim/lua/generated_colors.lua'), 'r')
-			if not f then
-				vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
+end
+
+
+if vim.o.termguicolors then
+	_G.reload_theme = function()
+		local f = require('generated_colors')
+		if not f then
+			vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
+			return
+		end
+		require('mini.base16').setup({ palette = f })
+		vim.g.colors_name = 'generated_colors'
+		local hls = { 'Normal',
+			'LineNr', 'LineNrAbove', 'LineNrBelow', 'MiniDiffSignAdd',
+			'MiniDiffSignChange', 'MiniDiffSignDelete',
+			--TODO - figure out why clearing bg is making just the diagnostic hls lose their fg colors
+			-- 'DiagnosticSignOk', 'DiagnosticSignHint', 'DiagnosticSignInfo',
+			-- 'DiagnosticSignWarn', 'DiagnosticSignError',  'SignColumn', 'FoldColumn', 'CursorLineSign', 'CursorLineFold', 'CursorLineNr',
+		}
+		for _, hl in ipairs(hls) do
+			-- local colors = vim.api.nvim_get_hl(0, { name = hl })
+			-- vim.api.nvim_set_hl(0, hl, { bg = 'NONE', fg = colors.fg })
+			vim.api.nvim_set_hl(0, hl, { bg = 'NONE' })
+		end
+		-- end
+		-- end
+	end
+
+	_G.reload_theme()
+
+	_G.watcher = vim.uv.new_fs_event()
+	local path = vim.fn.expand('./lua')
+	local is_reloading = false
+
+	if _G.watcher then
+		_G.watcher:start(path, {}, vim.schedule_wrap(function(err, filename, _)
+			if err or not filename then
+				vim.notify('Failed to initialize Matugen Theme File Watcher.',
+					vim.log.levels.ERROR)
 				return
 			end
-			local tab = f:read('*a')
-			f:close()
-
-			local load_tab, err = load(tab)
-			if err then
-				vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
-				return
+			if filename == 'generated_colors.lua' and not is_reloading then
+				is_reloading = true
+				vim.defer_fn(function()
+					_G.reload_theme()
+					is_reloading = false
+				end, 50)
 			end
-			if load_tab then
-				local ok, new_palette = pcall(load_tab)
-				if ok and type(new_palette) == 'table' then
-					require('mini.base16').setup({ palette = new_palette })
-					vim.g.colors_name = 'generated_colors'
-					-- vim.api.nvim_set_hl(0, 'Normal', { bg = 'NONE' })
-					local hls = { 'Normal',
-						'LineNr', 'LineNrAbove', 'LineNrBelow', 'MiniDiffSignAdd',
-						'MiniDiffSignChange', 'MiniDiffSignDelete',
-						--TODO - figure out why clearing bg is making just the diagnostic hls lose their fg colors
-						-- 'DiagnosticSignOk', 'DiagnosticSignHint', 'DiagnosticSignInfo',
-						-- 'DiagnosticSignWarn', 'DiagnosticSignError',  'SignColumn', 'FoldColumn', 'CursorLineSign', 'CursorLineFold', 'CursorLineNr',
-					}
-					for _, hl in ipairs(hls) do
-						-- local colors = vim.api.nvim_get_hl(0, { name = hl })
-						-- vim.api.nvim_set_hl(0, hl, { bg = 'NONE', fg = colors.fg })
-						vim.api.nvim_set_hl(0, hl, { bg = 'NONE' })
-					end
-				end
-			end
-		end
-
-		_G.reload_theme()
-
-		_G.watcher = vim.uv.new_fs_event()
-		local path = vim.fn.expand('./lua')
-		local is_reloading = false
-
-		if _G.watcher then
-			_G.watcher:start(path, {}, vim.schedule_wrap(function(err, filename, _)
-				if err or not filename then
-					vim.notify('Failed to initialize Matugen Theme File Watcher.',
-						vim.log.levels.ERROR)
-					return
-				end
-				if filename == 'generated_colors.lua' and not is_reloading then
-					is_reloading = true
-					vim.defer_fn(function()
-						_G.reload_theme()
-						is_reloading = false
-					end, 50)
-				end
-			end))
-		else
-			vim.notify('Failed to initialize file watcher', vim.log.levels.ERROR)
-		end
+		end))
+	else
+		vim.notify('Failed to initialize file watcher', vim.log.levels.ERROR)
 	end
 end
+
 require('mini.extra').setup()
 require('mini.pick').setup()
 require('mini.pairs').setup()
