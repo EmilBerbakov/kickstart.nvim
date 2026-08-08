@@ -51,20 +51,6 @@ vim.api.nvim_create_autocmd('FileType', {
 	callback = function() vim.opt_local.formatoptions = 'jql' end
 })
 
--- vim.api.nvim_create_autocmd('PackChanged', {
--- 	callback = function(ev)
--- 		local name = ev.data.spec.name
--- 		local kind = ev.data.kind
--- 		if kind ~= 'install' and kind ~= 'update' then return end
---
--- 		if name == 'nvim-treesitter' then
--- 			if not ev.data.active then vim.cmd.packadd('nvim-treesitter') end
--- 			vim.cmd('TSUpdate')
--- 			return
--- 		end
--- 	end
--- })
-
 if is_windows then
 	vim.opt.shell = 'pwsh -nologo -NoProfile'
 	vim.opt.shellcmdflag = '-ExecutionPolicy RemoteSigned -command'
@@ -86,7 +72,8 @@ if vim.o.termguicolors then
 			'MiniDiffSignChange', 'MiniDiffSignDelete',
 			--TODO - figure out why clearing bg is making just the diagnostic hls lose their fg colors
 			-- 'DiagnosticSignOk', 'DiagnosticSignHint', 'DiagnosticSignInfo',
-			-- 'DiagnosticSignWarn', 'DiagnosticSignError',  'SignColumn', 'FoldColumn', 'CursorLineSign', 'CursorLineFold', 'CursorLineNr',
+			-- 'DiagnosticSignWarn', 'DiagnosticSignError', 'SignColumn', 'FoldColumn', 'CursorLineSign',
+			-- 'CursorLineFold', 'CursorLineNr',
 		}
 		for _, hl in ipairs(hls) do
 			-- local colors = vim.api.nvim_get_hl(0, { name = hl })
@@ -280,8 +267,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
 		if client then
 			if client:supports_method('textDocument/completion') then
-				-- vim.o.complete = 'o,.,w,b,u'
-				-- vim.o.completeopt = 'menu,menuone,popup,noinsert'
 				vim.lsp.completion.enable(true, client.id, args.buf, {
 					autotrigger = true
 				})
@@ -297,25 +282,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		end
 	end
 })
-
--- vim.pack.add { { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' } }
--- require('nvim-treesitter').install('angular', 'html', 'lua', 'diff', 'powershell', 'python', 'c_sharp', 'typescript')
-
---TODO - maybe just pull the config from Kickstart wholesale for this?
-
--- vim.api.nvim_create_autocmd('FileType', {
--- 	callback = function(args)
--- 		local buf, filetype = args.buf, args.match
--- 		local ok = pcall(vim.treesitter.start, buf)
---
--- 		if not ok then
--- 			vim.bo[buf].syntax = 'on'
--- 		else
--- 			vim.bo[buf].syntax = 'off'
--- 			-- if vim.treesitter.query.get()
--- 		end
--- 	end
--- })
 
 --TODO: fix this
 -- local orig_sig = vim.lsp.handlers['textDocument/signatureHelp']
