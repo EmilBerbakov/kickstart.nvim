@@ -16,8 +16,6 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 vim.o.splitright = true
 vim.o.splitbelow = true
-vim.g.loaded_netrwPlugin = 1
-vim.g.loaded_netrw = 1
 vim.o.cmdheight = 0
 vim.o.termguicolors = true
 vim.o.smartindent = true
@@ -27,10 +25,17 @@ vim.o.confirm = true
 vim.o.laststatus = 3
 vim.o.autocomplete = true
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
+vim.o.cursorline = true
+
 require('vim._core.ui2').enable()
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
 local is_nightly = vim.version().minor > 12
-vim.o.cursorline = true
+
+if is_nightly then
+	vim.g.loaded_netrwPlugin = 1
+	vim.g.loaded_netrw = 1
+end
+
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
 	--for example, ts_ls needs typescript-language-server installed, which is done with
