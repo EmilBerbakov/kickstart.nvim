@@ -24,6 +24,7 @@ vim.o.inccommand = 'split'
 vim.o.confirm = true
 vim.o.laststatus = 3
 vim.o.autocomplete = true
+vim.opt.shortmess:append { c = true }
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
 require('vim._core.ui2').enable()
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
@@ -481,8 +482,27 @@ vim.keymap.set('n', 'gO', '<cmd>Pick lsp scope="document_symbol"<cr>', { desc = 
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
-
+-- TODO - I like this. Maybe I can replace mini.pick with windows that search instead
+-- There would have to be a debounce of some kind that would
+local function test()
+	local buf = vim.api.nvim_create_buf(false, true)
+	local win = vim.api.nvim_open_win(buf, true,
+		{
+			relative = 'editor',
+			row = 0,
+			col = 0,
+			width = 30,
+			height = 1,
+			style = "minimal",
+			title = "test",
+			border =
+			"rounded"
+		})
+	vim.api.nvim_set_current_win(win)
+	vim.cmd('startinsert')
+end
 --Misc. Keys
+-- vim.keymap.set('n', '<leader>l', test)
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
 	{ desc = '[F]ormat' })
