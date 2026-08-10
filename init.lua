@@ -24,6 +24,7 @@ vim.o.inccommand = 'split'
 vim.o.confirm = true
 vim.o.laststatus = 3
 vim.o.autocomplete = true
+vim.opt.shortmess:append { c = true }
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
 vim.o.cursorline = true
 
@@ -62,9 +63,13 @@ if is_windows then
 	vim.opt.shellxquote = ''
 end
 
-
+if is_nightly then
+	vim.g.loaded_netrwPlugin = 1
+	vim.g.loaded_netrw = 1
+end
 if vim.o.termguicolors then
 	_G.reload_theme = function()
+		package.loaded['generated_colors'] = nil
 		local f = require('generated_colors')
 		if not f then
 			vim.notify('Matugen Generated Color Scheme not found', vim.log.levels.ERROR)
@@ -85,14 +90,12 @@ if vim.o.termguicolors then
 			-- vim.api.nvim_set_hl(0, hl, { bg = 'NONE', fg = colors.fg })
 			vim.api.nvim_set_hl(0, hl, { bg = 'NONE' })
 		end
-		-- end
-		-- end
 	end
 
 	_G.reload_theme()
 
 	_G.watcher = vim.uv.new_fs_event()
-	local path = vim.fn.expand('./lua')
+	local path = vim.fn.stdpath('config') .. '/lua'
 	local is_reloading = false
 
 	if _G.watcher then
@@ -288,20 +291,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	end
 })
 
---TODO: fix this
--- local orig_sig = vim.lsp.handlers['textDocument/signatureHelp']
---
--- vim.lsp.handlers['textDocument/signatureHelp'] = function(err, result, ctx, config)
--- 	config = config or {}
--- 	local offset = 0
--- 	if vim.fn.pumvisible() == 1 then
--- 		local pum = vim.fn.pum_getpos()
--- 		offset = (pum.col + pum.width) - vim.fn.col('.') + 2
--- 	end
--- 	config.offset_x = offset
--- 	orig_sig(err, result, ctx, config)
--- end
-
 vim.lsp.config('angularls', {
 	on_attach = function(_, bufnr)
 		if not string.find(vim.fn.expand '%t', '.component.') then
@@ -481,14 +470,6 @@ local buffer_mappings = { wipeout = { char = '<C-d>', func = wipeout_cur } }
 vim.keymap.set('n', '<leader>sb', function() MiniPick.builtin.buffers(nil, { mappings = buffer_mappings }) end,
 	{ desc = '[S]earch [B]uffers' })
 vim.keymap.set('n', '<leader>su', '<CMD>Undotree<CR>', { desc = '[S]earch [U]ndotree' })
--- vim.keymap.set('n', '<leader>sn', '<CMD>messages<CR>', { desc = "[S]earch [N]otification History" })
--- vim.keymap.set('n', '<leader>sn', function()
--- 	vim.cmd('vsplit')
--- 	MiniNotify.show_history()
--- 	vim.opt_local.modifiable = false
--- 	vim.opt_local.modified = false
--- 	vim.opt_local.readonly = true
--- end, { desc = '[S]earch [N]otification History' })
 
 --Git Keys
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame -s %<CR>', { desc = '[G]it [B]lame File' })
@@ -508,8 +489,27 @@ vim.keymap.set('n', 'gO', '<cmd>Pick lsp scope="document_symbol"<cr>', { desc = 
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
-
+-- TODO - I like this. Maybe I can replace mini.pick with windows that search instead
+-- There would have to be a debounce of some kind that would
+local function test()
+	local buf = vim.api.nvim_create_buf(false, true)
+	local win = vim.api.nvim_open_win(buf, true,
+		{
+			relative = 'editor',
+			row = 0,
+			col = 0,
+			width = 30,
+			height = 1,
+			style = "minimal",
+			title = "test",
+			border =
+			"rounded"
+		})
+	vim.api.nvim_set_current_win(win)
+	vim.cmd('startinsert')
+end
 --Misc. Keys
+-- vim.keymap.set('n', '<leader>l', test)
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
 	{ desc = '[F]ormat' })
