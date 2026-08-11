@@ -37,6 +37,7 @@ if is_nightly then
 	vim.g.loaded_netrw = 1
 end
 
+
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
 	--for example, ts_ls needs typescript-language-server installed, which is done with
@@ -79,16 +80,15 @@ if vim.o.termguicolors then
 		vim.g.colors_name = 'generated_colors'
 		local hls = { 'Normal',
 			'LineNr', 'LineNrAbove', 'LineNrBelow', 'MiniDiffSignAdd',
-			'MiniDiffSignChange', 'MiniDiffSignDelete',
-			--TODO - figure out why clearing bg is making just the diagnostic hls lose their fg colors
-			-- 'DiagnosticSignOk', 'DiagnosticSignHint', 'DiagnosticSignInfo',
-			-- 'DiagnosticSignWarn', 'DiagnosticSignError', 'SignColumn', 'FoldColumn', 'CursorLineSign',
-			-- 'CursorLineFold', 'CursorLineNr',
+			'MiniDiffSignChange', 'MiniDiffSignDelete', 'SignColumn', 'FoldColumn', 'CursorLineSign',
+			'CursorLineFold'
 		}
 		for _, hl in ipairs(hls) do
-			-- local colors = vim.api.nvim_get_hl(0, { name = hl })
-			-- vim.api.nvim_set_hl(0, hl, { bg = 'NONE', fg = colors.fg })
 			vim.api.nvim_set_hl(0, hl, { bg = 'NONE' })
+		end
+		local diags = { 'DiagnosticSignError', 'DiagnosticSignOk', 'DiagnosticSignHint', 'DiagnosticSignInfo' }
+		for _, diag in ipairs(diags) do
+			vim.api.nvim_set_hl(0, diag, { link = diag:gsub('Sign', '') })
 		end
 	end
 
@@ -117,7 +117,6 @@ if vim.o.termguicolors then
 		vim.notify('Failed to initialize file watcher', vim.log.levels.ERROR)
 	end
 end
-
 require('mini.extra').setup()
 require('mini.pick').setup()
 require('mini.pairs').setup()
@@ -425,11 +424,6 @@ vim.keymap.set('n', '<leader>pu', vim.pack.update, { desc = '[P]lugin [U]pdate' 
 vim.keymap.set('n', '<leader>pl', MiniPick.registry.pack_list, { desc = '[P]lugin [L]ist' })
 
 --Diagnostics keys
-vim.keymap.set('n', '<leader>dl', function() MiniExtra.pickers.diagnostic({ scope = 'current' }) end,
-	{ desc = '[D]iagnostics [L]ist (buffer)' })
-vim.keymap.set('n', '<leader>dL', function() MiniExtra.pickers.diagnostic() end,
-	{ desc = '[D]iagnostics [L]ist (cwd)' })
-vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = '[D]iagnostics [F]loating Window' })
 vim.diagnostic.config {
 	severity_sort = true,
 	float = { border = 'rounded', source = 'if_many' },
@@ -443,6 +437,21 @@ vim.diagnostic.config {
 		},
 	} or {},
 }
+vim.keymap.set('n', '<leader>dl', function() MiniExtra.pickers.diagnostic({ scope = 'current' }) end,
+	{ desc = '[D]iagnostics [L]ist (buffer)' })
+vim.keymap.set('n', '<leader>dL', function() MiniExtra.pickers.diagnostic() end,
+	{ desc = '[D]iagnostics [L]ist (cwd)' })
+vim.keymap.set('n', '<leader>df', vim.diagnostic.open_float, { desc = '[D]iagnostics [F]loating Window' })
+local virt_desc = '[D]iagnostic [V]irtual Lines'
+local function toggle_virtual_lines()
+	local val = vim.diagnostic.config().virtual_lines
+	vim.diagnostic.config({ virtual_lines = not val })
+	local desc = vim.diagnostic.config().virtual_lines and 'Hide ' or
+	    'Show '
+	desc = desc .. virt_desc
+	MiniClue.set_mapping_desc('n', '<leader>dv', desc)
+end
+vim.keymap.set('n', '<leader>dv', toggle_virtual_lines, { desc = 'Show ' .. virt_desc })
 
 --Terminal Keys
 vim.keymap.set('n', '<leader>t', '<CMD> split | term<CR>i', { desc = 'Open [T]erminal' })
