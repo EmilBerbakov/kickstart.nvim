@@ -86,7 +86,8 @@ if vim.o.termguicolors then
 		for _, hl in ipairs(hls) do
 			vim.api.nvim_set_hl(0, hl, { bg = 'NONE' })
 		end
-		local diags = { 'DiagnosticSignError', 'DiagnosticSignOk', 'DiagnosticSignHint', 'DiagnosticSignInfo' }
+		local diags = { 'DiagnosticSignError', 'DiagnosticSignOk', 'DiagnosticSignHint', 'DiagnosticSignInfo',
+			'DiagnosticSignWarn' }
 		for _, diag in ipairs(diags) do
 			vim.api.nvim_set_hl(0, diag, { link = diag:gsub('Sign', '') })
 		end
