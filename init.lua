@@ -121,6 +121,7 @@ require('mini.extra').setup()
 require('mini.pick').setup()
 require('mini.pairs').setup()
 require('mini.surround').setup()
+require('mini.notify').setup()
 
 local miniclue = require('mini.clue')
 miniclue.setup({
@@ -510,22 +511,14 @@ vim.keymap.set('n', '<leader>gc', '<cmd>Pick git_commits path="%"<cr>', { desc =
 vim.keymap.set('n', '<leader>gC', '<cmd>Pick git_commits<cr>', { desc = '[G]it [C]ommits (cwd)' })
 
 --LSP keys
--- vim.keymap.set('n', 'grd', '<cmd>Pick lsp scope="definition"<cr>', { desc = '[G]oto [D]efinition' })
--- vim.keymap.set('n', 'grD', '<cmd>Pick lsp scope="declaration"<cr>', { desc = '[G]oto [D]eclaration' })
--- vim.keymap.set('n', 'gri', '<cmd>Pick lsp scope="implementation"<cr>', { desc = '[G]oto [I]mplementation' })
--- vim.keymap.set('n', 'grr', '<cmd>Pick lsp scope="references"<cr>', { desc = '[G]oto [R]eferences' })
--- vim.keymap.set('n', 'grt', '<cmd>Pick lsp scope="type_definition"<cr>', { desc = '[G]oto [T]ype Definition' })
--- vim.keymap.set('n', 'gO', '<cmd>Pick lsp scope="document_symbol"<cr>', { desc = '[G]oto D[o]cument Symbol' })
-
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
-MiniClue.set_mapping_desc('n', 'gd', '[G]oto [D]efinition')
-MiniClue.set_mapping_desc('n', 'gD', '[G]oto [D]eclaration')
 MiniClue.set_mapping_desc('n', 'gri', '[G]oto [I]mplementation')
 MiniClue.set_mapping_desc('n', 'grr', '[G]oto [R]eferences')
 MiniClue.set_mapping_desc('n', 'grt', '[G]oto [T]ype Definition')
 MiniClue.set_mapping_desc('n', 'gO', '[G]oto D[o]cument Symbol')
+
 -- TODO - I like this. Maybe I can replace mini.pick with windows that search instead
 -- There would have to be a debounce of some kind that would
 -- local function test()
@@ -558,10 +551,6 @@ local minifiles_toggle = function()
 	if not MiniFiles.close() then MiniFiles.open(current_file) end
 end
 vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
--- vim.keymap.set('n', '<leader>e', is_nightly and '<cmd>edit %:p:h<cr>' or '<cmd>20Lexplore %:p:h<cr>',
--- 	{ desc = 'Open Directory (parent)' })
--- vim.keymap.set('n', '<leader>E', is_nightly and '<cmd>edit .<CR>' or '<cmd>20Lexplore<cr>',
--- 	{ desc = 'Open Directory (cwd)' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center cursor on screen' })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
