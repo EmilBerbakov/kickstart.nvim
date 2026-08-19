@@ -8,7 +8,7 @@ vim.o.pumborder = 'rounded'
 vim.o.pumheight = 5
 vim.g.have_nerd_font = true
 vim.o.mouse = 'a'
--- vim.o.showmode = false
+vim.o.showmode = false
 vim.o.clipboard = 'unnamedplus'
 vim.o.breakindent = true
 vim.o.undofile = true
@@ -16,7 +16,6 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 vim.o.splitright = true
 vim.o.splitbelow = true
--- vim.o.cmdheight = 0
 vim.o.termguicolors = true
 vim.o.smartindent = true
 vim.o.autoindent = true
@@ -27,8 +26,6 @@ vim.o.autocomplete = true
 vim.opt.shortmess:append { c = true }
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
 vim.o.cursorline = true
--- vim.opt.grepprg = 'rg --vimgrep --smart-case --hidden'
--- vim.opt.grepformat = '%f:%l:%c:%m'
 
 require('vim._core.ui2').enable()
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
@@ -152,12 +149,12 @@ miniclue.setup({
 		-- Window commands
 		{ mode = 'n',          keys = '<C-w>' },
 
-
 		-- `z` key
 		{ mode = { 'n', 'x' }, keys = 'z' },
 
 		-- `s` key
 		{ mode = 'n',          keys = 's' },
+
 		-- visual mode mini.ai keys
 		{ mode = 'v',          keys = 'a' },
 		{ mode = 'v',          keys = 'i' }
@@ -182,8 +179,8 @@ miniclue.setup({
 		miniclue.gen_clues.z(),
 	}
 })
--- local statusline = require 'mini.statusline'
--- statusline.setup { use_icons = vim.g.have_nerd_font }
+local statusline = require 'mini.statusline'
+statusline.setup { use_icons = vim.g.have_nerd_font }
 
 require('mini.ai').setup {
 	nlines = 500,
@@ -236,47 +233,6 @@ end
 local au_opts = { pattern = 'MiniGitCommandSplit', callback = align_blame }
 vim.api.nvim_create_autocmd('User', au_opts)
 
--- vim.api.nvim_set_hl(0, "GitBlameHashRoot", { link = "Tag" })
--- vim.api.nvim_set_hl(0, "GitBlameHash", { link = "Identifier" })
--- vim.api.nvim_set_hl(0, "GitBlameAuthor", { link = "String" })
--- vim.api.nvim_set_hl(0, "GitBlameDate", { link = "Comment" })
---
--- vim.api.nvim_create_autocmd('User', {
--- 	pattern = 'MiniGitCommandSplit',
--- 	callback = function(e)
--- 		if e.data.git_subcommand ~= 'blame' then
--- 			return
--- 		end
--- 		local win_src = e.data.win_source
--- 		local buf = e.buf
--- 		local win = e.data.win_stdout
--- 		-- Opts
--- 		vim.bo[buf].modifiable = false
--- 		vim.wo[win].wrap = false
--- 		vim.wo[win].cursorline = true
--- 		-- View
--- 		vim.fn.winrestview({ topline = vim.fn.line('w0', win_src) })
--- 		vim.api.nvim_win_set_cursor(0, { vim.fn.line('.', win_src), 0 })
--- 		vim.wo[win].scrollbind, vim.wo[win_src].scrollbind = true, true
--- 		vim.wo[win].cursorbind, vim.wo[win_src].cursorbind = true, true
--- 		-- Vert width
--- 		if e.data.cmd_input.mods:match("vertical") then
--- 			local lines = vim.api.nvim_buf_get_lines(0, 1, -1, false)
--- 			local width = vim.iter(lines):fold(-1, function(acc, ln)
--- 				local stat = string.match(ln, "^%S+ %b()")
--- 				return math.max(acc, vim.fn.strwidth(stat))
--- 			end)
--- 			width = width + vim.fn.getwininfo(win)[1].textoff
--- 			vim.api.nvim_win_set_width(win, width)
--- 		end
--- 		-- Highlight
--- 		vim.fn.matchadd("GitBlameHashRoot", [[^^\w\+]])
--- 		vim.fn.matchadd("GitBlameHash", [[^\w\+]])
--- 		local leftmost = [[^.\{-}\zs]]
--- 		vim.fn.matchadd("GitBlameAuthor", leftmost .. [[(\zs.\{-} \ze\d\{4}-]])
--- 		vim.fn.matchadd("GitBlameDate", leftmost .. [[[0-9-]\{10} [0-9:]\{8} [+-]\d\+]])
--- 	end
--- })
 require('mini.diff').setup()
 
 
@@ -494,17 +450,17 @@ vim.keymap.set('n', '<S-Tab>', '<cmd>tabp<cr>', { desc = 'Previous tab' })
 vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K]eymaps' })
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
--- vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
 
 local vg = function(pattern, hidden)
 	local h = hidden and '--hidden' or ''
-	local command = 'rg --vimgrep --smart-case ' .. h .. ' ' .. pattern
+	local p = string.gsub(pattern, '  ', ' -g ')
+	local command = 'rg --vimgrep --smart-case ' .. h .. ' ' .. p
 	return vim.fn.systemlist(command)
 end
 
 local vg_input = function(hidden)
 	return vim.ui.input(
-		{ prompt = "Grep: " },
+		{ prompt = "Grep<space><space>Glob: " },
 		function(pattern)
 			if pattern and pattern ~= '' then
 				local files = vg(pattern, hidden)
@@ -564,6 +520,12 @@ vim.keymap.set('n', '<leader>gC', '<cmd>Pick git_commits<cr>', { desc = '[G]it [
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
+MiniClue.set_mapping_desc('n', 'gd', '[G]oto [D]efinition')
+MiniClue.set_mapping_desc('n', 'gD', '[G]oto [D]eclaration')
+MiniClue.set_mapping_desc('n', 'gri', '[G]oto [I]mplementation')
+MiniClue.set_mapping_desc('n', 'grr', '[G]oto [R]eferences')
+MiniClue.set_mapping_desc('n', 'grt', '[G]oto [T]ype Definition')
+MiniClue.set_mapping_desc('n', 'gO', '[G]oto D[o]cument Symbol')
 -- TODO - I like this. Maybe I can replace mini.pick with windows that search instead
 -- There would have to be a debounce of some kind that would
 -- local function test()
