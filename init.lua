@@ -8,7 +8,7 @@ vim.o.pumborder = 'rounded'
 vim.o.pumheight = 5
 vim.g.have_nerd_font = true
 vim.o.mouse = 'a'
-vim.o.showmode = false
+-- vim.o.showmode = false
 vim.o.clipboard = 'unnamedplus'
 vim.o.breakindent = true
 vim.o.undofile = true
@@ -16,7 +16,7 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 vim.o.splitright = true
 vim.o.splitbelow = true
-vim.o.cmdheight = 0
+-- vim.o.cmdheight = 0
 vim.o.termguicolors = true
 vim.o.smartindent = true
 vim.o.autoindent = true
@@ -27,6 +27,8 @@ vim.o.autocomplete = true
 vim.opt.shortmess:append { c = true }
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
 vim.o.cursorline = true
+-- vim.opt.grepprg = 'rg --vimgrep --smart-case --hidden'
+-- vim.opt.grepformat = '%f:%l:%c:%m'
 
 require('vim._core.ui2').enable()
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
@@ -180,8 +182,8 @@ miniclue.setup({
 		miniclue.gen_clues.z(),
 	}
 })
-local statusline = require 'mini.statusline'
-statusline.setup { use_icons = vim.g.have_nerd_font }
+-- local statusline = require 'mini.statusline'
+-- statusline.setup { use_icons = vim.g.have_nerd_font }
 
 require('mini.ai').setup {
 	nlines = 500,
@@ -431,6 +433,7 @@ end
 
 local hls = { 'TextYankPost' }
 if is_nightly then table.insert(hls, 'TextPutPost') end
+---@diagnostic disable-next-line: deprecated
 local hlfs = is_nightly and vim.hl.hl_op or vim.hl.on_yank
 
 vim.api.nvim_create_autocmd(hls, {
@@ -491,7 +494,38 @@ vim.keymap.set('n', '<S-Tab>', '<cmd>tabp<cr>', { desc = 'Previous tab' })
 vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K]eymaps' })
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
-vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
+-- vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep (<C-o> to add Glob)' })
+
+local vg = function(pattern, hidden)
+	local h = hidden and '--hidden' or ''
+	local command = 'rg --vimgrep --smart-case ' .. h .. ' ' .. pattern
+	return vim.fn.systemlist(command)
+end
+
+local vg_input = function(hidden)
+	return vim.ui.input(
+		{ prompt = "Grep: " },
+		function(pattern)
+			if pattern and pattern ~= '' then
+				local files = vg(pattern, hidden)
+				if vim.v.shell_error == 0 and #files > 0 then
+					vim.fn.setqflist({}, ' ',
+						{
+							title = 'Grep: ' .. pattern,
+							lines = files
+						})
+					vim.cmd('cope')
+				else
+					vim.notify('No results for: ' .. pattern, vim.log.levels.WARN)
+				end
+			end
+		end
+	)
+end
+
+vim.keymap.set('n', '<leader>sg', function() vg_input(false) end, { desc = '[S]earch [G]rep', silent = true })
+vim.keymap.set('n', '<leader>sG', function() vg_input(true) end,
+	{ desc = '[S]earch [G]rep (include hidden)', silent = true })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 local wipeout_cur = function()
 	vim.api.nvim_buf_delete(MiniPick.get_picker_matches().current.bufnr, {})
@@ -502,42 +536,53 @@ vim.keymap.set('n', '<leader>sb', function() MiniPick.builtin.buffers(nil, { map
 vim.keymap.set('n', '<leader>su', '<CMD>Undotree<CR>', { desc = '[S]earch [U]ndotree' })
 
 --Git Keys
+local git_send = function()
+	return vim.ui.input(
+		{ prompt = 'Commit Message: ' },
+		function(message)
+			if message and message ~= '' then
+				local fmessage = string.gsub(message, ' ', '\\ ')
+				vim.cmd(':Git send ' .. fmessage)
+			end
+		end
+	)
+end
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame %<CR>', { desc = '[G]it [B]lame File' })
-vim.keymap.set('n', '<leader>gS', ':Git send ', { desc = '[G]it [S]end (No quotes; " "= "\\ ")' })
+vim.keymap.set('n', '<leader>gS', git_send, { desc = '[G]it [S]end' })
 vim.keymap.set('n', '<leader>gb', '<cmd>Pick git_branches<CR>', { desc = '[G]it [B]ranches' })
 vim.keymap.set('n', '<leader>gc', '<cmd>Pick git_commits path="%"<cr>', { desc = '[G]it [C]ommits (buffer)' })
 vim.keymap.set('n', '<leader>gC', '<cmd>Pick git_commits<cr>', { desc = '[G]it [C]ommits (cwd)' })
 
 --LSP keys
-vim.keymap.set('n', 'grd', '<cmd>Pick lsp scope="definition"<cr>', { desc = '[G]oto [D]efinition' })
-vim.keymap.set('n', 'grD', '<cmd>Pick lsp scope="declaration"<cr>', { desc = '[G]oto [D]eclaration' })
-vim.keymap.set('n', 'gri', '<cmd>Pick lsp scope="implementation"<cr>', { desc = '[G]oto [I]mplementation' })
-vim.keymap.set('n', 'grr', '<cmd>Pick lsp scope="references"<cr>', { desc = '[G]oto [R]eferences' })
-vim.keymap.set('n', 'grt', '<cmd>Pick lsp scope="type_definition"<cr>', { desc = '[G]oto [T]ype Definition' })
-vim.keymap.set('n', 'gO', '<cmd>Pick lsp scope="document_symbol"<cr>', { desc = '[G]oto D[o]cument Symbol' })
+-- vim.keymap.set('n', 'grd', '<cmd>Pick lsp scope="definition"<cr>', { desc = '[G]oto [D]efinition' })
+-- vim.keymap.set('n', 'grD', '<cmd>Pick lsp scope="declaration"<cr>', { desc = '[G]oto [D]eclaration' })
+-- vim.keymap.set('n', 'gri', '<cmd>Pick lsp scope="implementation"<cr>', { desc = '[G]oto [I]mplementation' })
+-- vim.keymap.set('n', 'grr', '<cmd>Pick lsp scope="references"<cr>', { desc = '[G]oto [R]eferences' })
+-- vim.keymap.set('n', 'grt', '<cmd>Pick lsp scope="type_definition"<cr>', { desc = '[G]oto [T]ype Definition' })
+-- vim.keymap.set('n', 'gO', '<cmd>Pick lsp scope="document_symbol"<cr>', { desc = '[G]oto D[o]cument Symbol' })
 
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
 -- TODO - I like this. Maybe I can replace mini.pick with windows that search instead
 -- There would have to be a debounce of some kind that would
-local function test()
-	local buf = vim.api.nvim_create_buf(false, true)
-	local win = vim.api.nvim_open_win(buf, true,
-		{
-			relative = 'editor',
-			row = 0,
-			col = 0,
-			width = 30,
-			height = 1,
-			style = "minimal",
-			title = "test",
-			border =
-			"rounded"
-		})
-	vim.api.nvim_set_current_win(win)
-	vim.cmd('startinsert')
-end
+-- local function test()
+-- 	local buf = vim.api.nvim_create_buf(false, true)
+-- 	local win = vim.api.nvim_open_win(buf, true,
+-- 		{
+-- 			relative = 'editor',
+-- 			row = 0,
+-- 			col = 0,
+-- 			width = 30,
+-- 			height = 1,
+-- 			style = "minimal",
+-- 			title = "test",
+-- 			border =
+-- 			"rounded"
+-- 		})
+-- 	vim.api.nvim_set_current_win(win)
+-- 	vim.cmd('startinsert')
+-- end
 --Misc. Keys
 -- vim.keymap.set('n', '<leader>l', test)
 vim.keymap.set('n', '<leader>f',
@@ -551,10 +596,10 @@ local minifiles_toggle = function()
 	if not MiniFiles.close() then MiniFiles.open(current_file) end
 end
 vim.keymap.set('n', '-', minifiles_toggle, { desc = 'open parent directory' })
-vim.keymap.set('n', '<leader>e', is_nightly and '<cmd>edit %:p:h<cr>' or '<cmd>20Lexplore %:p:h<cr>',
-	{ desc = 'Open Directory (parent)' })
-vim.keymap.set('n', '<leader>E', is_nightly and '<cmd>edit .<CR>' or '<cmd>20Lexplore<cr>',
-	{ desc = 'Open Directory (cwd)' })
+-- vim.keymap.set('n', '<leader>e', is_nightly and '<cmd>edit %:p:h<cr>' or '<cmd>20Lexplore %:p:h<cr>',
+-- 	{ desc = 'Open Directory (parent)' })
+-- vim.keymap.set('n', '<leader>E', is_nightly and '<cmd>edit .<CR>' or '<cmd>20Lexplore<cr>',
+-- 	{ desc = 'Open Directory (cwd)' })
 vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center cursor on screen' })
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
