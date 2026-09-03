@@ -27,6 +27,10 @@ vim.opt.shortmess:append { c = true }
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
 vim.o.cursorline = true
 
+--Global compiler settings
+vim.g.dotnet_errors_only = true
+vim.g.dotnet_show_project_file = false
+
 require('vim._core.ui2').enable()
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
 local is_nightly = vim.version().minor > 12
@@ -119,7 +123,7 @@ if vim.o.termguicolors then
 end
 require('mini.extra').setup()
 require('mini.pick').setup()
-require('mini.pairs').setup()
+-- require('mini.pairs').setup()
 require('mini.surround').setup()
 require('mini.notify').setup()
 
@@ -264,6 +268,15 @@ vim.api.nvim_create_autocmd('LspAttach', {
 				end
 			})
 		end
+	end
+})
+
+vim.lsp.config('csharp_ls', {
+	on_attach = function()
+		-- vim.opt_local.compiler = 'dotnet'
+		vim.cmd('compiler dotnet')
+		-- vim.cmd('setlocal makeprg=dotnet\\ build\\ -c\\ Debug\\ /p:Platform=Any\\ CPU')
+		vim.opt_local.makeprg = "dotnet build $* -c Debug /p:Platform=Any CPU"
 	end
 })
 
@@ -540,6 +553,23 @@ MiniClue.set_mapping_desc('n', 'gO', '[G]oto D[o]cument Symbol')
 -- end
 --Misc. Keys
 -- vim.keymap.set('n', '<leader>l', test)
+local function quickfix_toggle()
+	local windows = vim.fn.getwininfo()
+	local has_qf = false
+	for _, win in ipairs(windows) do
+		if win["quickfix"] == 1 and win["loclist"] == 0 then
+			has_qf = true
+			break
+		end
+	end
+	if has_qf then
+		vim.cmd("ccl")
+	else
+		vim.cmd("cope")
+	end
+end
+
+vim.keymap.set('n', '<leader>c', quickfix_toggle, { desc = 'Toggle Qui[c]kfix List' })
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
 	{ desc = '[F]ormat' })
