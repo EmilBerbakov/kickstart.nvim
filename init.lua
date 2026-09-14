@@ -465,37 +465,38 @@ vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]el
 vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K]eymaps' })
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
 
-local vg = function(pattern, hidden)
-	local h = hidden and '--hidden' or ''
-	local p = string.gsub(pattern, '  ', ' -g ')
-	local command = 'rg --vimgrep --smart-case ' .. h .. ' ' .. p
-	return vim.fn.systemlist(command)
-end
+-- local vg = function(pattern, hidden)
+-- 	local h = hidden and '--hidden' or ''
+-- 	local p = string.gsub(pattern, '  ', ' -g ')
+-- 	local command = 'rg --vimgrep --smart-case ' .. h .. ' ' .. p
+-- 	return vim.fn.systemlist(command)
+-- end
+--
+-- local vg_input = function(hidden)
+-- 	return vim.ui.input(
+-- 		{ prompt = "Grep<space><space>Glob: " },
+-- 		function(pattern)
+-- 			if pattern and pattern ~= '' then
+-- 				local files = vg(pattern, hidden)
+-- 				if vim.v.shell_error == 0 and #files > 0 then
+-- 					vim.fn.setqflist({}, ' ',
+-- 						{
+-- 							title = 'Grep: ' .. pattern,
+-- 							lines = files
+-- 						})
+-- 					vim.cmd('cope')
+-- 				else
+-- 					vim.notify('No results for: ' .. pattern, vim.log.levels.WARN)
+-- 				end
+-- 			end
+-- 		end
+-- 	)
+-- end
 
-local vg_input = function(hidden)
-	return vim.ui.input(
-		{ prompt = "Grep<space><space>Glob: " },
-		function(pattern)
-			if pattern and pattern ~= '' then
-				local files = vg(pattern, hidden)
-				if vim.v.shell_error == 0 and #files > 0 then
-					vim.fn.setqflist({}, ' ',
-						{
-							title = 'Grep: ' .. pattern,
-							lines = files
-						})
-					vim.cmd('cope')
-				else
-					vim.notify('No results for: ' .. pattern, vim.log.levels.WARN)
-				end
-			end
-		end
-	)
-end
-
-vim.keymap.set('n', '<leader>sg', function() vg_input(false) end, { desc = '[S]earch [G]rep', silent = true })
-vim.keymap.set('n', '<leader>sG', function() vg_input(true) end,
-	{ desc = '[S]earch [G]rep (include hidden)', silent = true })
+-- vim.keymap.set('n', '<leader>sg', function() vg_input(false) end, { desc = '[S]earch [G]rep', silent = true })
+-- vim.keymap.set('n', '<leader>sG', function() vg_input(true) end,
+-- 	{ desc = '[S]earch [G]rep (include hidden)', silent = true })
+vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 local wipeout_cur = function()
 	vim.api.nvim_buf_delete(MiniPick.get_picker_matches().current.bufnr, {})
@@ -567,6 +568,13 @@ local function quickfix_toggle()
 	else
 		vim.cmd("cope")
 	end
+end
+
+if is_nightly then
+	local mc_clear = 'call nvim_buf_clear_namespace(0, nvim_create_namespace("nvim.multicursor"), 0, -1)'
+	local cmds = { 'silent normal! <C-c>', 'let v:hlsearch = 0', 'diffupdate', mc_clear, 'silent normal! <C-l>' }
+	vim.keymap.set('n', '<C-c>', '<Cmd>' .. table.concat(cmds, '<CR><Cmd>') .. '<CR>',
+		{ desc = 'Stop, clear, redraw' })
 end
 
 vim.keymap.set('n', '<leader>c', quickfix_toggle, { desc = 'Toggle Qui[c]kfix List' })
