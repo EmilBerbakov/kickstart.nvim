@@ -23,9 +23,13 @@ vim.o.inccommand = 'split'
 vim.o.confirm = true
 vim.o.laststatus = 3
 vim.o.autocomplete = true
-vim.opt.shortmess:append { c = true }
+vim.opt.shortmess:append 'c'
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
 vim.o.cursorline = true
+
+--Global compiler settings
+vim.g.dotnet_errors_only = true
+vim.g.dotnet_show_project_file = false
 
 require('vim._core.ui2').enable()
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
@@ -46,7 +50,9 @@ vim.pack.add {
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
+	{ src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' }
 }
+
 
 vim.cmd.packadd('nvim.undotree')
 require('mini.icons').setup()
@@ -119,7 +125,11 @@ if vim.o.termguicolors then
 end
 require('mini.extra').setup()
 require('mini.pick').setup()
-require('mini.pairs').setup()
+--TODO - look into either:
+-- 1. mapping a disable/enable toggle
+-- 2. start disabled and map MiniPairs.closeopen / close / open
+--	Not quite sure how to use this one
+-- require('mini.pairs').setup()
 require('mini.surround').setup()
 require('mini.notify').setup()
 
@@ -238,7 +248,7 @@ require('mini.diff').setup()
 
 
 local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls', 'cssls', 'basedpyright', 'yamlls',
-	'clangd' }
+	'clangd', 'rust_analyzer' }
 
 for _, server in ipairs(servers) do
 	vim.lsp.enable(server)
@@ -254,6 +264,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 				vim.lsp.completion.enable(true, client.id, args.buf, {
 					autotrigger = true
 				})
+				vim.opt.complete:prepend('o')
 			end
 		end
 		if client and client:supports_method('textDocument/formatting') then
@@ -264,6 +275,15 @@ vim.api.nvim_create_autocmd('LspAttach', {
 				end
 			})
 		end
+	end
+})
+
+vim.lsp.config('csharp_ls', {
+	on_attach = function()
+		-- vim.opt_local.compiler = 'dotnet'
+		vim.cmd('compiler dotnet')
+		-- vim.cmd('setlocal makeprg=dotnet\\ build\\ -c\\ Debug\\ /p:Platform=Any\\ CPU')
+		vim.opt_local.makeprg = "dotnet build $* -c Debug /p:Platform=Any CPU"
 	end
 })
 
@@ -327,6 +347,40 @@ require('conform').setup({
 				timeout_ms = 500,
 				lsp_format = 'fallback'
 			}
+		end
+	end
+})
+
+--Treesitter stuff
+vim.api.nvim_create_autocmd('PackChanged', {
+	callback = function(ev)
+		local name = ev.data.spec.name
+		local kind = ev.data.kind
+
+		if name ~= 'nvim-treesitter' and kind ~= 'install' and kind ~= 'update' then return end
+
+		if not ev.data.active then vim.cmd.packadd 'nvim-treesitter' end
+		vim.cmd 'TSUpdate'
+	end
+})
+
+local function treesitter_try_attach(buf, language)
+	if not vim.treesitter.language.add(language) and not vim.api.nvim_buf_is_valid(buf) then return end
+	vim.treesitter.start(buf, language)
+	local has_indent_query = vim.treesitter.query.get(language, 'indents') ~= nil
+	if has_indent_query then vim.bo.indentexpr = "v:lua.require'nvim_treesitter'.indentexpr()" end
+end
+
+vim.api.nvim_create_autocmd('FileType', {
+	callback = function(args)
+		local buf, filetype = args.buf, args.match
+		local language = vim.treesitter.language.get_lang(filetype)
+		if not language then return end
+		local available_parsers = require('nvim-treesitter').get_available()
+		if vim.tbl_contains(available_parsers, language) then
+			require('nvim-treesitter').install(language):await(function()
+				treesitter_try_attach(buf, language)
+			end)
 		end
 	end
 })
@@ -452,37 +506,38 @@ vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]el
 vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K]eymaps' })
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
 
-local vg = function(pattern, hidden)
-	local h = hidden and '--hidden' or ''
-	local p = string.gsub(pattern, '  ', ' -g ')
-	local command = 'rg --vimgrep --smart-case ' .. h .. ' ' .. p
-	return vim.fn.systemlist(command)
-end
+-- local vg = function(pattern, hidden)
+-- 	local h = hidden and '--hidden' or ''
+-- 	local p = string.gsub(pattern, '  ', ' -g ')
+-- 	local command = 'rg --vimgrep --smart-case ' .. h .. ' ' .. p
+-- 	return vim.fn.systemlist(command)
+-- end
+--
+-- local vg_input = function(hidden)
+-- 	return vim.ui.input(
+-- 		{ prompt = "Grep<space><space>Glob: " },
+-- 		function(pattern)
+-- 			if pattern and pattern ~= '' then
+-- 				local files = vg(pattern, hidden)
+-- 				if vim.v.shell_error == 0 and #files > 0 then
+-- 					vim.fn.setqflist({}, ' ',
+-- 						{
+-- 							title = 'Grep: ' .. pattern,
+-- 							lines = files
+-- 						})
+-- 					vim.cmd('cope')
+-- 				else
+-- 					vim.notify('No results for: ' .. pattern, vim.log.levels.WARN)
+-- 				end
+-- 			end
+-- 		end
+-- 	)
+-- end
 
-local vg_input = function(hidden)
-	return vim.ui.input(
-		{ prompt = "Grep<space><space>Glob: " },
-		function(pattern)
-			if pattern and pattern ~= '' then
-				local files = vg(pattern, hidden)
-				if vim.v.shell_error == 0 and #files > 0 then
-					vim.fn.setqflist({}, ' ',
-						{
-							title = 'Grep: ' .. pattern,
-							lines = files
-						})
-					vim.cmd('cope')
-				else
-					vim.notify('No results for: ' .. pattern, vim.log.levels.WARN)
-				end
-			end
-		end
-	)
-end
-
-vim.keymap.set('n', '<leader>sg', function() vg_input(false) end, { desc = '[S]earch [G]rep', silent = true })
-vim.keymap.set('n', '<leader>sG', function() vg_input(true) end,
-	{ desc = '[S]earch [G]rep (include hidden)', silent = true })
+-- vim.keymap.set('n', '<leader>sg', function() vg_input(false) end, { desc = '[S]earch [G]rep', silent = true })
+-- vim.keymap.set('n', '<leader>sG', function() vg_input(true) end,
+-- 	{ desc = '[S]earch [G]rep (include hidden)', silent = true })
+vim.keymap.set('n', '<leader>sg', '<CMD>Pick grep_live<CR>', { desc = '[S]earch [G]rep' })
 vim.keymap.set('n', '<leader>sc', MiniExtra.pickers.colorschemes, { desc = '[S]earch [C]olorschemes' })
 local wipeout_cur = function()
 	vim.api.nvim_buf_delete(MiniPick.get_picker_matches().current.bufnr, {})
@@ -504,11 +559,20 @@ local git_send = function()
 		end
 	)
 end
+local goto_git_remote = function()
+	local origin = vim.fn.system('git remote get-url origin')
+	if origin then
+		vim.cmd('silent !cmd /c start ' .. origin)
+	else
+		vim.notify('Git Remote Repo URL not found', vim.log.levels.INFO)
+	end
+end
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame %<CR>', { desc = '[G]it [B]lame File' })
 vim.keymap.set('n', '<leader>gS', git_send, { desc = '[G]it [S]end' })
 vim.keymap.set('n', '<leader>gb', '<cmd>Pick git_branches<CR>', { desc = '[G]it [B]ranches' })
 vim.keymap.set('n', '<leader>gc', '<cmd>Pick git_commits path="%"<cr>', { desc = '[G]it [C]ommits (buffer)' })
 vim.keymap.set('n', '<leader>gC', '<cmd>Pick git_commits<cr>', { desc = '[G]it [C]ommits (cwd)' })
+vim.keymap.set('n', '<leader>gx', goto_git_remote, { desc = 'Goto [G]it Remote Repo' })
 
 --LSP keys
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
@@ -540,6 +604,30 @@ MiniClue.set_mapping_desc('n', 'gO', '[G]oto D[o]cument Symbol')
 -- end
 --Misc. Keys
 -- vim.keymap.set('n', '<leader>l', test)
+local function quickfix_toggle()
+	local windows = vim.fn.getwininfo()
+	local has_qf = false
+	for _, win in ipairs(windows) do
+		if win["quickfix"] == 1 and win["loclist"] == 0 then
+			has_qf = true
+			break
+		end
+	end
+	if has_qf then
+		vim.cmd("ccl")
+	else
+		vim.cmd("cope")
+	end
+end
+
+if is_nightly then
+	local mc_clear = 'call nvim_buf_clear_namespace(0, nvim_create_namespace("nvim.multicursor"), 0, -1)'
+	local cmds = { 'silent normal! <C-c>', 'let v:hlsearch = 0', 'diffupdate', mc_clear, 'silent normal! <C-l>' }
+	vim.keymap.set('n', '<C-c>', '<Cmd>' .. table.concat(cmds, '<CR><Cmd>') .. '<CR>',
+		{ desc = 'Stop, clear, redraw' })
+end
+
+vim.keymap.set('n', '<leader>c', quickfix_toggle, { desc = 'Toggle Qui[c]kfix List' })
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
 	{ desc = '[F]ormat' })
