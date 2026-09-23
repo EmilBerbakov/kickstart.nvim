@@ -555,3 +555,6 @@ vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
 vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
+if is_windows then
+	vim.keymap.set('n', '<leader>m', "mmHmt<CMD>%s/<C-v><CR>//ge<cr>'tzt'm<cr>", { desc = 'Remove Carraige Returns' })
+end
