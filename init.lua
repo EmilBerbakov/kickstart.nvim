@@ -125,6 +125,10 @@ if vim.o.termguicolors then
 end
 require('mini.extra').setup()
 require('mini.pick').setup()
+--TODO - look into either:
+-- 1. mapping a disable/enable toggle
+-- 2. start disabled and map MiniPairs.closeopen / close / open
+--	Not quite sure how to use this one
 -- require('mini.pairs').setup()
 require('mini.surround').setup()
 require('mini.notify').setup()
