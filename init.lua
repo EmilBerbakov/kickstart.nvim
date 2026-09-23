@@ -23,7 +23,7 @@ vim.o.inccommand = 'split'
 vim.o.confirm = true
 vim.o.laststatus = 3
 vim.o.autocomplete = true
-vim.opt.shortmess:append { c = true }
+vim.opt.shortmess:append 'c'
 vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
 vim.o.cursorline = true
 
@@ -50,7 +50,9 @@ vim.pack.add {
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
+	{ src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' }
 }
+
 
 vim.cmd.packadd('nvim.undotree')
 require('mini.icons').setup()
@@ -242,7 +244,7 @@ require('mini.diff').setup()
 
 
 local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_ls', 'cssls', 'basedpyright', 'yamlls',
-	'clangd' }
+	'clangd', 'rust_analyzer' }
 
 for _, server in ipairs(servers) do
 	vim.lsp.enable(server)
@@ -258,6 +260,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 				vim.lsp.completion.enable(true, client.id, args.buf, {
 					autotrigger = true
 				})
+				vim.opt.complete:prepend('o')
 			end
 		end
 		if client and client:supports_method('textDocument/formatting') then
@@ -340,6 +343,40 @@ require('conform').setup({
 				timeout_ms = 500,
 				lsp_format = 'fallback'
 			}
+		end
+	end
+})
+
+--Treesitter stuff
+vim.api.nvim_create_autocmd('PackChanged', {
+	callback = function(ev)
+		local name = ev.data.spec.name
+		local kind = ev.data.kind
+
+		if name ~= 'nvim-treesitter' and kind ~= 'install' and kind ~= 'update' then return end
+
+		if not ev.data.active then vim.cmd.packadd 'nvim-treesitter' end
+		vim.cmd 'TSUpdate'
+	end
+})
+
+local function treesitter_try_attach(buf, language)
+	if not vim.treesitter.language.add(language) and not vim.api.nvim_buf_is_valid(buf) then return end
+	vim.treesitter.start(buf, language)
+	local has_indent_query = vim.treesitter.query.get(language, 'indents') ~= nil
+	if has_indent_query then vim.bo.indentexpr = "v:lua.require'nvim_treesitter'.indentexpr()" end
+end
+
+vim.api.nvim_create_autocmd('FileType', {
+	callback = function(args)
+		local buf, filetype = args.buf, args.match
+		local language = vim.treesitter.language.get_lang(filetype)
+		if not language then return end
+		local available_parsers = require('nvim-treesitter').get_available()
+		if vim.tbl_contains(available_parsers, language) then
+			require('nvim-treesitter').install(language):await(function()
+				treesitter_try_attach(buf, language)
+			end)
 		end
 	end
 })
@@ -518,11 +555,20 @@ local git_send = function()
 		end
 	)
 end
+local goto_git_remote = function()
+	local origin = vim.fn.system('git remote get-url origin')
+	if origin then
+		vim.cmd('silent !cmd /c start ' .. origin)
+	else
+		vim.notify('Git Remote Repo URL not found', vim.log.levels.INFO)
+	end
+end
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame %<CR>', { desc = '[G]it [B]lame File' })
 vim.keymap.set('n', '<leader>gS', git_send, { desc = '[G]it [S]end' })
 vim.keymap.set('n', '<leader>gb', '<cmd>Pick git_branches<CR>', { desc = '[G]it [B]ranches' })
 vim.keymap.set('n', '<leader>gc', '<cmd>Pick git_commits path="%"<cr>', { desc = '[G]it [C]ommits (buffer)' })
 vim.keymap.set('n', '<leader>gC', '<cmd>Pick git_commits<cr>', { desc = '[G]it [C]ommits (cwd)' })
+vim.keymap.set('n', '<leader>gx', goto_git_remote, { desc = 'Goto [G]it Remote Repo' })
 
 --LSP keys
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
