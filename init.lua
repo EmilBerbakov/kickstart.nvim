@@ -86,7 +86,7 @@ if vim.o.termguicolors then
 		local hls = { 'Normal',
 			'LineNr', 'LineNrAbove', 'LineNrBelow', 'MiniDiffSignAdd',
 			'MiniDiffSignChange', 'MiniDiffSignDelete', 'SignColumn', 'FoldColumn', 'CursorLineSign',
-			'CursorLineFold'
+			'CursorLineFold', 'NormalNC'
 		}
 		for _, hl in ipairs(hls) do
 			vim.api.nvim_set_hl(0, hl, { bg = 'NONE' })
@@ -489,7 +489,28 @@ end
 vim.keymap.set('n', '<leader>dv', toggle_virtual_lines, { desc = 'Show ' .. virt_desc })
 
 --Terminal Keys
-vim.keymap.set('n', '<leader>t', '<CMD> split | term<CR>i', { desc = 'Open [T]erminal' })
+--TODO - fix this
+-- local function toggle_terminal()
+-- 	local buffers = vim.fn.getbufinfo()
+-- 	local has_term = false
+-- 	-- local is_visible = false
+-- 	for _, buf in ipairs(buffers) do
+-- 		if buf.name:find("^term", 1, true) then
+-- 			has_term = true
+-- 			local win_id = buf.windows[1]
+-- 			if win_id ~= nil then
+-- 				vim.api.nvim_win_close(win_id, true)
+-- 				break
+-- 			else
+-- 				vim.api.nvim_open_win(buf.bufnr, true, { split = "below", win = 0 })
+-- 			end
+-- 		end
+-- 		if not has_term then
+-- 			vim.cmd('split | term')
+-- 		end
+-- 	end
+-- end
+vim.keymap.set('n', '<leader>t', '<CMD>split|term<CR>i', { desc = 'Open [T]erminal' })
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
 --Window Movement Keys
@@ -498,8 +519,9 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
-vim.keymap.set('n', '<tab>', '<cmd>tabn<cr>', { desc = 'Next tab' })
-vim.keymap.set('n', '<S-Tab>', '<cmd>tabp<cr>', { desc = 'Previous tab' })
+--NOTE: <C-i> maps to <tab> and vice-versa
+-- vim.keymap.set('n', '<tab>', '<cmd>tabn<cr>', { desc = 'Next tab' })
+-- vim.keymap.set('n', '<S-Tab>', '<cmd>tabp<cr>', { desc = 'Previous tab' })
 
 --Search Keys
 vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]elp' })
