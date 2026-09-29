@@ -17,8 +17,8 @@ vim.o.smartcase = true
 vim.o.splitright = true
 vim.o.splitbelow = true
 vim.o.termguicolors = true
-vim.o.smartindent = true
-vim.o.autoindent = true
+-- vim.o.smartindent = true
+-- vim.o.autoindent = true
 vim.o.inccommand = 'split'
 vim.o.confirm = true
 vim.o.laststatus = 3
@@ -50,10 +50,13 @@ vim.pack.add {
 	{ src = 'https://github.com/nvim-mini/mini.nvim' },
 	{ src = 'https://github.com/folke/lazydev.nvim' },
 	{ src = 'https://github.com/stevearc/conform.nvim' },
-	{ src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' }
+	{ src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' },
+	{ src = 'https://github.com/NMAC427/guess-indent.nvim' }
+
+
 }
 
-
+require('guess-indent').setup({})
 vim.cmd.packadd('nvim.undotree')
 require('mini.icons').setup()
 
@@ -181,6 +184,7 @@ miniclue.setup({
 		{ mode = 'n', keys = '<leader>p', desc = '[P]lugin' },
 		{ mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
 		{ mode = 'n', keys = '<leader>g', desc = '[G]it' },
+		{ mode = 'n', keys = 'grs',       desc = '[S]plit' },
 		miniclue.gen_clues.square_brackets(),
 		miniclue.gen_clues.builtin_completion(),
 		miniclue.gen_clues.g(),
@@ -368,7 +372,7 @@ local function treesitter_try_attach(buf, language)
 	if not vim.treesitter.language.add(language) and not vim.api.nvim_buf_is_valid(buf) then return end
 	vim.treesitter.start(buf, language)
 	local has_indent_query = vim.treesitter.query.get(language, 'indents') ~= nil
-	if has_indent_query then vim.bo.indentexpr = "v:lua.require'nvim_treesitter'.indentexpr()" end
+	if has_indent_query then vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" end
 end
 
 vim.api.nvim_create_autocmd('FileType', {
@@ -376,8 +380,11 @@ vim.api.nvim_create_autocmd('FileType', {
 		local buf, filetype = args.buf, args.match
 		local language = vim.treesitter.language.get_lang(filetype)
 		if not language then return end
+		local installed_parsers = require('nvim-treesitter').get_installed()
 		local available_parsers = require('nvim-treesitter').get_available()
-		if vim.tbl_contains(available_parsers, language) then
+		if vim.tbl_contains(installed_parsers, language) then
+			treesitter_try_attach(buf, language)
+		elseif vim.tbl_contains(available_parsers, language) then
 			require('nvim-treesitter').install(language):await(function()
 				treesitter_try_attach(buf, language)
 			end)
@@ -597,13 +604,39 @@ vim.keymap.set('n', '<leader>gC', '<cmd>Pick git_commits<cr>', { desc = '[G]it [
 vim.keymap.set('n', '<leader>gx', goto_git_remote, { desc = 'Goto [G]it Remote Repo' })
 
 --LSP keys
+
+local function split_fun(lsp_function)
+	vim.cmd('vsplit')
+	lsp_function()
+end
+
+local function split_keypress(keys)
+	vim.cmd('vsplit')
+	vim.cmd('normal! ' .. keys)
+end
+
+
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
 MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
 MiniClue.set_mapping_desc('n', 'gri', '[G]oto [I]mplementation')
+-- TODO - fix
+-- vim.keymap.set('n', 'grsi', function()
+-- 	split_keypress('gri')
+-- end, { desc = '[G]oto [I]mplementation' })
 MiniClue.set_mapping_desc('n', 'grr', '[G]oto [R]eferences')
 MiniClue.set_mapping_desc('n', 'grt', '[G]oto [T]ype Definition')
 MiniClue.set_mapping_desc('n', 'gO', '[G]oto D[o]cument Symbol')
+vim.keymap.set('n', 'grd', vim.lsp.buf.definition, { desc = '[G]oto [D]efinition' })
+vim.keymap.set('n', 'grsd', function()
+		split_fun(vim.lsp.buf.definition)
+	end,
+	{ desc = '[G]oto [D]efinition', silent = true })
+vim.keymap.set('n', 'grD', vim.lsp.buf.declaration, { desc = '[G]oto [D]eclaration' })
+vim.keymap.set('n', 'grsD', function()
+		split_fun(vim.lsp.buf.declaration)
+	end,
+	{ desc = '[G]oto [D]eclaration', silent = true })
 
 -- TODO - I like this. Maybe I can replace mini.pick with windows that search instead
 -- There would have to be a debounce of some kind that would
