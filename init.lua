@@ -128,13 +128,18 @@ if vim.o.termguicolors then
 end
 require('mini.extra').setup()
 require('mini.pick').setup()
---TODO - look into either:
--- 1. mapping a disable/enable toggle
--- 2. start disabled and map MiniPairs.closeopen / close / open
---	Not quite sure how to use this one
--- require('mini.pairs').setup()
+--NOTE, this can be disabled temporarily in insert mode by pressing <C-v> and then the character you want to insert
+require('mini.pairs').setup()
 require('mini.surround').setup()
-require('mini.notify').setup()
+local function filter_lsp_messages(notifs)
+	local good_message = function(notif)
+		return not vim.startswith(notif.msg, 'lua_ls: Diagnosing')
+	end
+	notifs = vim.tbl_filter(good_message, notifs)
+	return MiniNotify.default_sort(notifs)
+end
+require('mini.notify').setup({ content = { sort = filter_lsp_messages } })
+
 
 local miniclue = require('mini.clue')
 miniclue.setup({
@@ -184,7 +189,7 @@ miniclue.setup({
 		{ mode = 'n', keys = '<leader>p', desc = '[P]lugin' },
 		{ mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
 		{ mode = 'n', keys = '<leader>g', desc = '[G]it' },
-		{ mode = 'n', keys = 'grs',       desc = '[S]plit' },
+		{ mode = 'n', keys = 'grs',       desc = '[S]plit LSP' },
 		miniclue.gen_clues.square_brackets(),
 		miniclue.gen_clues.builtin_completion(),
 		miniclue.gen_clues.g(),
@@ -612,7 +617,8 @@ end
 
 local function split_keypress(keys)
 	vim.cmd('vsplit')
-	vim.cmd('normal! ' .. keys)
+	-- vim.cmd('vsplit | normal! ' .. keys)
+	return '<CMD>normal! ' .. keys .. '<CR>'
 end
 
 
@@ -621,9 +627,9 @@ MiniClue.set_mapping_desc('n', 'grn', '[G]oto Re[n]ame')
 MiniClue.set_mapping_desc('n', 'grx', 'Code.run()')
 MiniClue.set_mapping_desc('n', 'gri', '[G]oto [I]mplementation')
 -- TODO - fix
--- vim.keymap.set('n', 'grsi', function()
--- 	split_keypress('gri')
--- end, { desc = '[G]oto [I]mplementation' })
+vim.keymap.set('n', 'grsi', function()
+	split_fun(vim.lsp.buf.implementation)
+end, { desc = '[G]oto [I]mplementation' })
 MiniClue.set_mapping_desc('n', 'grr', '[G]oto [R]eferences')
 MiniClue.set_mapping_desc('n', 'grt', '[G]oto [T]ype Definition')
 MiniClue.set_mapping_desc('n', 'gO', '[G]oto D[o]cument Symbol')
@@ -698,6 +704,7 @@ vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
 vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
+
 if is_windows then
 	vim.keymap.set('n', '<leader>m', "mmHmt<CMD>%s/<C-v><CR>//ge<cr>'tzt'm<cr>", { desc = 'Remove Carraige Returns' })
 end
