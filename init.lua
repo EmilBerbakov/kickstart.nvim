@@ -683,8 +683,8 @@ end
 
 if is_nightly then
 	local mc_clear = 'call nvim_buf_clear_namespace(0, nvim_create_namespace("nvim.multicursor"), 0, -1)'
-	local cmds = { 'silent normal! <C-c>', 'let v:hlsearch = 0', 'diffupdate', mc_clear, 'silent normal! <C-l>' }
-	vim.keymap.set('n', '<C-c>', '<Cmd>' .. table.concat(cmds, '<CR><Cmd>') .. '<CR>',
+	local cmds = { 'silent normal! <C-[>', 'let v:hlsearch = 0', 'diffupdate', mc_clear, 'silent normal! <C-l>' }
+	vim.keymap.set('n', '<C-[>', '<Cmd>' .. table.concat(cmds, '<CR><Cmd>') .. '<CR>',
 		{ desc = 'Stop, clear, redraw' })
 end
 
