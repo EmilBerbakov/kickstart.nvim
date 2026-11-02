@@ -24,36 +24,104 @@ vim.o.confirm = true
 vim.o.laststatus = 3
 vim.o.autocomplete = true
 vim.opt.shortmess:append 'c'
-vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect'
+vim.opt.completeopt = 'menu,menuone,fuzzy,noinsert,noselect,popup'
 vim.o.cursorline = true
 
 --Global compiler settings
 vim.g.dotnet_errors_only = true
 vim.g.dotnet_show_project_file = false
 
-require('vim._core.ui2').enable()
+vim.o.cmdheight = 0
+
+
+local goto_git_remote = function(origin)
+	origin = origin or vim.fn.system('git remote get-url origin')
+	if origin then
+		vim.notify(origin)
+		local result, _ = string.gsub(origin, "git@github.com:", "https://github.com/")
+		vim.ui.open(result)
+	else
+		vim.notify('Git Remote Repo URL not found', vim.log.levels.INFO)
+	end
+end
+
+require('vim._core.ui2').enable({
+	enable = true,
+	msg = {
+		targets = 'msg'
+		-- targets = {
+		-- 	progress = "msg"
+		-- }
+	}
+})
+
+local frames = { '⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏' }
+local i_frame = 0
+local message_id = nil
+local function progress(percent, title, is_running)
+	local status = "success"
+	if is_running then
+		status = "running"
+	end
+
+	if i_frame == #frames then
+		i_frame = 0
+	end
+
+	i_frame = i_frame + 1
+
+	message_id = vim.api.nvim_echo({ { title } }, false, {
+		id = message_id,
+		percent = percent,
+		source = "lsp-progress",
+		status = status,
+		title = frames[i_frame] .. " LSP",
+		kind = "progress"
+	})
+end
+
+vim.api.nvim_create_autocmd("LspProgress", {
+	callback = function(args)
+		local value = args.data.params.value
+
+		if value == nil then return end
+
+		local title = value.title
+		local percent = value.percentage or 0
+		local is_running = true
+
+		if percent > 95 and percent <= 100 then
+			is_running = false
+		end
+
+		if percent > 0 then
+			progress(percent, title, is_running)
+		end
+	end
+})
+
 local is_windows = vim.loop.os_uname().sysname == 'Windows_NT'
 local is_nightly = vim.version().minor > 12
 
-if is_nightly then
-	vim.g.loaded_netrwPlugin = 1
-	vim.g.loaded_netrw = 1
-end
+-- Just disable since I'm using mini.files, for now
+-- if is_nightly then
+vim.g.loaded_netrwPlugin = 1
+vim.g.loaded_netrw = 1
+-- end
 
-
+local gh = 'https://github.com/'
 vim.pack.add {
 	--without mason-lspconfig + mason-tool-installer, you have to look at each cmd in ~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lsp/ for the lsp you want, and make sure you have whatever runs the command installed
 	--for example, ts_ls needs typescript-language-server installed, which is done with
 	-- ``` npm install -g typescript-language-server typescript ```
 	-- For Windows, this path is %localappdata%\nvim-data\site\pack\core\opt\nvim-lspconfig\lsp
-	{ src = 'https://github.com/neovim/nvim-lspconfig' },
-	{ src = 'https://github.com/nvim-mini/mini.nvim' },
-	{ src = 'https://github.com/folke/lazydev.nvim' },
-	{ src = 'https://github.com/stevearc/conform.nvim' },
-	{ src = 'https://github.com/nvim-treesitter/nvim-treesitter', version = 'main' },
-	{ src = 'https://github.com/NMAC427/guess-indent.nvim' }
-
-
+	{ src = gh .. 'neovim/nvim-lspconfig' },
+	{ src = gh .. 'nvim-mini/mini.nvim' },
+	{ src = gh .. 'folke/lazydev.nvim' },
+	{ src = gh .. 'stevearc/conform.nvim' },
+	{ src = gh .. 'nvim-treesitter/nvim-treesitter', version = 'main' },
+	{ src = gh .. 'NMAC427/guess-indent.nvim' },
+	{ src = gh .. 'akinsho/toggleterm.nvim' }
 }
 
 require('guess-indent').setup({})
@@ -128,17 +196,19 @@ if vim.o.termguicolors then
 end
 require('mini.extra').setup()
 require('mini.pick').setup()
+vim.ui.select = require('mini.pick').ui_select
 --NOTE, this can be disabled temporarily in insert mode by pressing <C-v> and then the character you want to insert
 require('mini.pairs').setup()
 require('mini.surround').setup()
-local function filter_lsp_messages(notifs)
-	local good_message = function(notif)
-		return not vim.startswith(notif.msg, 'lua_ls: Diagnosing')
-	end
-	notifs = vim.tbl_filter(good_message, notifs)
-	return MiniNotify.default_sort(notifs)
-end
-require('mini.notify').setup({ content = { sort = filter_lsp_messages } })
+-- local function filter_lsp_messages(notifs)
+-- 	local good_message = function(notif)
+-- 		return not vim.startswith(notif.msg, 'lua_ls: Diagnosing')
+-- 	end
+-- 	notifs = vim.tbl_filter(good_message, notifs)
+-- 	return MiniNotify.default_sort(notifs)
+-- end
+-- require('mini.notify').setup({ content = { sort = filter_lsp_messages } })
+
 
 
 local miniclue = require('mini.clue')
@@ -189,6 +259,7 @@ miniclue.setup({
 		{ mode = 'n', keys = '<leader>p', desc = '[P]lugin' },
 		{ mode = 'n', keys = '<leader>d', desc = '[D]iagnostics' },
 		{ mode = 'n', keys = '<leader>g', desc = '[G]it' },
+		{ mode = 'n', keys = '<leader>t', desc = '[T]erminal' },
 		{ mode = 'n', keys = 'grs',       desc = '[S]plit LSP' },
 		miniclue.gen_clues.square_brackets(),
 		miniclue.gen_clues.builtin_completion(),
@@ -200,6 +271,31 @@ miniclue.setup({
 	}
 })
 local statusline = require 'mini.statusline'
+-- statusline.setup({
+-- 	content = {
+-- 		active = function()
+-- 			local mode, mode_hl       = MiniStatusline.section_mode({ trunc_width = 120 })
+-- 			local git                 = MiniStatusline.section_git({ trunc_width = 40 })
+-- 			local diagnostics         = MiniStatusline.section_diagnostics({ trunc_width = 75 })
+-- 			local lsp                 = MiniStatusline.section_lsp({ trunc_width = 75 })
+-- 			local filename            = MiniStatusline.section_filename({ trunc_width = 140 })
+-- 			local fileinfo            = MiniStatusline.section_fileinfo({ trunc_width = 120 })
+-- 			local location            = MiniStatusline.section_location({ trunc_width = 120 })
+-- 			local progress_statusline = vim.ui.progress_status()
+--
+-- 			return statusline.combine_groups({
+-- 				{ hl = mode_hl,                 strings = { mode } },
+-- 				{ hl = "MiniStatuslineDevinfo", strings = { git, diagnostics, lsp } },
+-- 				"%<",
+-- 				{ hl = "MiniStatuslineFilename", strings = { filename } },
+-- 				"%=",
+-- 				{ hl = "MiniStatuslineDevinfo",  strings = { progress_statusline } },
+-- 				{ hl = "MiniStatuslineFileinfo", strings = { fileinfo } },
+-- 				{ hl = mode_hl,                  strings = { location } },
+-- 			})
+-- 		end,
+-- 	},
+-- })
 statusline.setup { use_icons = vim.g.have_nerd_font }
 
 require('mini.ai').setup {
@@ -221,7 +317,7 @@ require('mini.files').setup({
 	},
 })
 vim.api.nvim_create_autocmd('User', {
-	pattern = 'MiniFilesWindowOpen',
+	pattern = { 'MiniFilesWindowOpen', 'TermOpen', 'BufEnter' },
 	callback = function() require('mini.clue').enable_buf_triggers() end
 })
 
@@ -262,7 +358,6 @@ local servers = { 'ts_ls', 'angularls', 'lua_ls', 'vimdoc_ls', 'vimls', 'csharp_
 for _, server in ipairs(servers) do
 	vim.lsp.enable(server)
 end
-
 
 vim.api.nvim_create_autocmd('LspAttach', {
 	group = vim.api.nvim_create_augroup('lsp_completion', { clear = true }),
@@ -442,7 +537,8 @@ MiniPick.registry.pack_list = function()
 				elseif choice == 2 then
 					vim.pack.del({ item.spec.name })
 				elseif choice == 3 then
-					vim.ui.open(item.spec.src)
+					goto_git_remote(item.spec.src)
+					-- vim.ui.open(item.spec.src)
 				elseif choice == 4 then
 					vim.schedule(function()
 						MiniPick.builtin.resume()
@@ -500,30 +596,29 @@ local function toggle_virtual_lines()
 end
 vim.keymap.set('n', '<leader>dv', toggle_virtual_lines, { desc = 'Show ' .. virt_desc })
 
---Terminal Keys
---TODO - fix this
--- local function toggle_terminal()
--- 	local buffers = vim.fn.getbufinfo()
--- 	local has_term = false
--- 	-- local is_visible = false
--- 	for _, buf in ipairs(buffers) do
--- 		if buf.name:find("^term", 1, true) then
--- 			has_term = true
--- 			local win_id = buf.windows[1]
--- 			if win_id ~= nil then
--- 				vim.api.nvim_win_close(win_id, true)
--- 				break
--- 			else
--- 				vim.api.nvim_open_win(buf.bufnr, true, { split = "below", win = 0 })
--- 			end
--- 		end
--- 		if not has_term then
--- 			vim.cmd('split | term')
--- 		end
--- 	end
--- end
-vim.keymap.set('n', '<leader>t', '<CMD>split|term<CR>i', { desc = 'Open [T]erminal' })
+require('toggleterm').setup({
+	size = function(term)
+		if term.direction == "horizontal" then
+			return 15
+		elseif term.direction == "vertical" then
+			return vim.o.columns * 0.4
+		end
+	end,
+})
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+vim.keymap.set('t', '<C-h>', [[<Cmd>wincmd h<CR>]])
+vim.keymap.set('t', '<C-j>', [[<Cmd>wincmd j<CR>]])
+vim.keymap.set('t', '<C-k>', [[<Cmd>wincmd k<CR>]])
+vim.keymap.set('t', '<C-l>', [[<Cmd>wincmd l<CR>]])
+vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]])
+
+local t = require('toggleterm.terminal').Terminal
+local ai = t:new({ cmd = 'agy', direction = 'vertical', hidden = true })
+
+vim.keymap.set('n', '<leader>ta', function()
+	ai:toggle()
+end, { desc = '[T]oggle [A]I CLI' })
+vim.keymap.set('n', '<leader>tt', '<CMD>ToggleTerm<CR>', { desc = '[T]oggle [T]erminal' })
 
 --Window Movement Keys
 vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
@@ -539,6 +634,7 @@ vim.keymap.set('n', '<C-q>', '<C-w>q', { desc = 'Close window' })
 vim.keymap.set('n', '<leader>sh', '<CMD>Pick help<CR>', { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sk', '<CMD>Pick keymaps<CR>', { desc = '[S]earch [K]eymaps' })
 vim.keymap.set('n', '<leader>sf', '<CMD>Pick files<CR>', { desc = '[S]earch [F]iles' })
+vim.keymap.set('n', '<leader>sm', '<CMD>messages<CR>', { desc = '[S]earch [M]essages' })
 
 -- local vg = function(pattern, hidden)
 -- 	local h = hidden and '--hidden' or ''
@@ -593,14 +689,6 @@ local git_send = function()
 		end
 	)
 end
-local goto_git_remote = function()
-	local origin = vim.fn.system('git remote get-url origin')
-	if origin then
-		vim.cmd('silent !cmd /c start ' .. origin)
-	else
-		vim.notify('Git Remote Repo URL not found', vim.log.levels.INFO)
-	end
-end
 vim.keymap.set('n', '<leader>gB', '<CMD>vert Git blame %<CR>', { desc = '[G]it [B]lame File' })
 vim.keymap.set('n', '<leader>gS', git_send, { desc = '[G]it [S]end' })
 vim.keymap.set('n', '<leader>gb', '<cmd>Pick git_branches<CR>', { desc = '[G]it [B]ranches' })
@@ -615,11 +703,11 @@ local function split_fun(lsp_function)
 	lsp_function()
 end
 
-local function split_keypress(keys)
-	vim.cmd('vsplit')
-	-- vim.cmd('vsplit | normal! ' .. keys)
-	return '<CMD>normal! ' .. keys .. '<CR>'
-end
+-- local function split_keypress(keys)
+-- 	vim.cmd('vsplit')
+-- 	-- vim.cmd('vsplit | normal! ' .. keys)
+-- 	return '<CMD>normal! ' .. keys .. '<CR>'
+-- end
 
 
 MiniClue.set_mapping_desc('n', 'gra', '[G]oto Code [A]ctions')
@@ -665,21 +753,23 @@ vim.keymap.set('n', 'grsD', function()
 -- end
 --Misc. Keys
 -- vim.keymap.set('n', '<leader>l', test)
-local function quickfix_toggle()
-	local windows = vim.fn.getwininfo()
-	local has_qf = false
-	for _, win in ipairs(windows) do
-		if win["quickfix"] == 1 and win["loclist"] == 0 then
-			has_qf = true
-			break
-		end
-	end
-	if has_qf then
-		vim.cmd("ccl")
-	else
-		vim.cmd("cope")
-	end
-end
+
+-- Will toggle both quickfix and loclist
+-- local function quickfix_toggle()
+-- 	local windows = vim.fn.getwininfo()
+-- 	local has_qf = false
+-- 	for _, win in ipairs(windows) do
+-- 		if win["quickfix"] == 1 then
+-- 			has_qf = true
+-- 			break
+-- 		end
+-- 	end
+-- 	if has_qf then
+-- 		vim.cmd("ccl")
+-- 	else
+-- 		vim.cmd("cope")
+-- 	end
+-- end
 
 if is_nightly then
 	local mc_clear = 'call nvim_buf_clear_namespace(0, nvim_create_namespace("nvim.multicursor"), 0, -1)'
@@ -687,13 +777,13 @@ if is_nightly then
 	vim.keymap.set('n', '<C-[>', '<Cmd>' .. table.concat(cmds, '<CR><Cmd>') .. '<CR>',
 		{ desc = 'Stop, clear, redraw' })
 end
-
-vim.keymap.set('n', '<leader>c', quickfix_toggle, { desc = 'Toggle Qui[c]kfix List' })
+--TODO - re-enable when I'm using QuickFix more than MiniPick
+-- vim.keymap.set('n', '<leader>c', quickfix_toggle, { desc = 'Toggle Qui[c]kfix List' })
 vim.keymap.set('n', '<leader>f',
 	function() require("conform").format { async = true, lsp_format = "fallback" } end,
 	{ desc = '[F]ormat' })
 vim.keymap.set('n', '<leader>f', vim.lsp.buf.format, { desc = '[F]ormat buffer' })
-vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
+-- vim.keymap.set('n', '<leader>r', '<CMD>restart<CR>', { desc = '[R]estart' })
 vim.keymap.set('n', '<Esc>', '<CMD>nohlsearch<CR>', { desc = 'clear highlights' })
 local minifiles_toggle = function()
 	local current_file = vim.api.nvim_buf_get_name(0)
@@ -704,6 +794,10 @@ vim.keymap.set('n', '<C-u>', '<C-u>zz', { desc = 'move up half a page and center
 vim.keymap.set('n', '<C-d>', '<C-d>zz', { desc = 'move down half a page and center cursor on screen' })
 vim.keymap.set('v', '<', '<gv', { desc = 'indent left and reselect' })
 vim.keymap.set('v', '>', '>gv', { desc = 'indent right and reselect' })
+--Never let autocomplete consume Enter
+vim.keymap.set('i', '<CR>', function()
+	return '<C-e>' .. MiniPairs.cr()
+end, { expr = true })
 
 if is_windows then
 	vim.keymap.set('n', '<leader>m', "mmHmt<CMD>%s/<C-v><CR>//ge<cr>'tzt'm<cr>", { desc = 'Remove Carraige Returns' })
